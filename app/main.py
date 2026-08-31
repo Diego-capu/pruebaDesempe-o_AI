@@ -27,7 +27,7 @@ app = FastAPI(
 rag_engine = RAGEngine()
 
 # Static files directory
-static_dir = os.path.join(os.path.dirname(__file__), "static")
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
 os.makedirs(static_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
