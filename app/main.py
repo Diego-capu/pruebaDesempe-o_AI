@@ -2,7 +2,7 @@ import os
 import logging
 from typing import Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -75,6 +75,25 @@ def chat_endpoint(request: ChatRequest):
     except Exception as e:
         logger.exception("Error processing chat request")
         raise HTTPException(status_code=500, detail=f"Internal RAG pipeline error: {str(e)}")
+
+# Endpoint 1b: Real-time Streaming Chat API (Server-Sent Events)
+@app.post("/api/chat/stream")
+def chat_stream_endpoint(request: ChatRequest):
+    """
+    Real-time streaming SSE chat endpoint. Returns tokens progressively
+    along with contextual quick reply chips and full RAG telemetry.
+    """
+    if not request.query or not request.query.strip():
+        raise HTTPException(status_code=400, detail="Query string cannot be empty.")
+    
+    try:
+        return StreamingResponse(
+            rag_engine.process_query_stream(query=request.query, session_id=request.session_id),
+            media_type="text/event-stream"
+        )
+    except Exception as e:
+        logger.exception("Error processing chat stream request")
+        raise HTTPException(status_code=500, detail=f"Internal streaming RAG pipeline error: {str(e)}")
 
 # Endpoint 2: Telegram / n8n HTTP Webhook Entrypoint
 @app.post("/api/webhook")

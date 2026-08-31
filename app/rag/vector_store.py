@@ -21,6 +21,7 @@ class VectorStoreManager:
         self.collection_name = collection_name
         self.api_key = os.getenv("OPENAI_API_KEY", "")
         self.embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+        self.base_url = os.getenv("OPENAI_BASE_URL", None)
 
         os.makedirs(self.chroma_dir, exist_ok=True)
         self.client = chromadb.PersistentClient(path=self.chroma_dir)
@@ -37,7 +38,10 @@ class VectorStoreManager:
         if self.api_key and not self.api_key.startswith("your_openai"):
             try:
                 from openai import OpenAI
-                client = OpenAI(api_key=self.api_key)
+                kwargs = {"api_key": self.api_key}
+                if self.base_url:
+                    kwargs["base_url"] = self.base_url
+                client = OpenAI(**kwargs)
                 response = client.embeddings.create(
                     input=text,
                     model=self.embedding_model

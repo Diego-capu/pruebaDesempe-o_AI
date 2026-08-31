@@ -17,21 +17,23 @@ An intelligent, production-grade AI Admissions Assistant for a Technological Uni
    - Grounded strictly in 3+ business documents with strict anti-hallucination controls.
 
 2. **Double-Filter Human Escalation Engine**:
-   - **Filter 1 (Pre-LLM Similarity Score Check)**: Evaluates retrieved vector similarity scores before calling the LLM API. If no relevant chunks meet the confidence threshold (`0.35`), the system escalates immediately **without calling the LLM API**, saving API costs and preventing hallucinations.
-   - **Filter 2 (Post-LLM System Prompt Tag)**: Evaluates LLM responses for the explicit `[ESCALATE_TO_HUMAN]` prefix tag when questions pass vector search but are determined to be out-of-scope.
+   - **Filter 1 (Context Evaluation)**: Filters vector chunks based on cosine similarity threshold before LLM synthesis.
+   - **Filter 2 (Post-LLM System Prompt Tag)**: Detects explicit `[ESCALATE_TO_HUMAN]` prefix tags when questions require human advisor assistance, while politely rejecting non-academic spam without ticket creation.
    - Generates structured ticket objects (`TICK-XXXXXX`) for human admissions counselors.
 
 3. **Usage & Cost Telemetry (`response.usage`)**:
    - Dynamically tracks token consumption (`prompt_tokens`, `completion_tokens`, `total_tokens`) extracted directly from the LLM API `response.usage` object.
-   - Calculates monetary costs in USD ($) and tracks escalation rate (%) in real-time.
+   - Calculates monetary costs in USD ($) and monthly token quota progress (%) in real-time.
 
 4. **Response Caching**:
    - Built-in normalized semantic/exact memory cache (`CacheService`) to return zero-cost, instant responses for frequent applicant questions.
 
-5. **Multi-Channel Integration**:
+5. **Multi-Channel Integration & Real-time Streaming**:
+   - `POST /api/chat/stream`: Real-time Server-Sent Events (SSE) streaming endpoint with progressive token delivery and interactive Quick Reply Chips.
    - `POST /api/chat`: REST API endpoint for web and mobile frontends.
    - `POST /api/webhook`: Webhook endpoint compatible with Telegram bots and n8n workflow triggers.
-   - Glassmorphism Web UI at `/` featuring live chat, source chunk inspector, and telemetry dashboard.
+   - `n8n_workflow.json`: Ready-to-import n8n workflow connecting Telegram & Webhook to the RAG backend with automated human escalation routing.
+   - Glassmorphism Web UI at `/` featuring live chat, quick reply chips, source chunk inspector, and telemetry dashboard.
 
 ---
 
@@ -41,29 +43,30 @@ An intelligent, production-grade AI Admissions Assistant for a Technological Uni
 .
 ├── app/
 │   ├── api/                 # API endpoints and route definitions
-│   ├── main.py              # FastAPI server entry point & startup logic
+│   ├── main.py              # FastAPI server entry point, streaming & webhook logic
 │   ├── prompts/
-│   │   └── system_prompts.py# Grounded system prompt & 4 Few-Shot examples
+│   │   └── system_prompts.py# Grounded system prompt & 7 Few-Shot examples
 │   ├── rag/
-│   │   ├── engine.py        # RAG pipeline orchestrator
+│   │   ├── engine.py        # RAG pipeline orchestrator (Sync & SSE Stream)
 │   │   ├── ingest.py        # Business document ingestion script
 │   │   ├── text_splitter.py # Recursive text splitter with overlap
-│   │   └── vector_store.py  # ChromaDB vector store manager & hybrid embeddings
+│   │   └── vector_store.py  # ChromaDB vector store manager & embeddings
 │   ├── services/
 │   │   ├── cache_service.py # Fast semantic/exact query response cache
-│   │   ├── escalation_service.py # Double-filter escalation & ticket manager
-│   │   └── metrics_service.py    # Usage token cost & telemetry tracking
+│   │   ├── escalation_service.py # Escalation evaluation & ticket manager
+│   │   └── metrics_service.py    # Usage token cost, quota & telemetry tracking
 │   ├── static/
 │   │   └── index.html       # Modern dark-mode web application & dashboard
 │   └── tests/
-│       └── test_rag.py      # Automated test suite
+│       └── test_rag.py      # Automated test suite (8 unit & integration tests)
 ├── data/
 │   ├── chroma_db/           # Persistent ChromaDB vector database files
-│   └── documents/           # University business documents (TXT/MD)
+│   └── documents/           # University & Academy business documents (TXT)
 │       ├── 01_programs_and_modalities.txt
 │       ├── 02_tuition_fees_and_financial_aid.txt
 │       └── 03_admissions_and_certifications.txt
 ├── .env.example             # Environment variables configuration template
+├── n8n_workflow.json        # Exported n8n automation workflow (Telegram + Webhook)
 ├── package_project.py       # Submission packaging utility script
 ├── requirements.txt         # Project dependencies
 └── README.md                # Project documentation
@@ -188,7 +191,25 @@ curl -X POST "http://localhost:8000/api/chat" \
 }
 ```
 
-### 2. Webhook Endpoint for Telegram / n8n (`POST /api/webhook`)
+### 2. Real-time Streaming Query Endpoint (`POST /api/chat/stream`)
+
+**Request:**
+```bash
+curl -N -X POST "http://localhost:8000/api/chat/stream" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "query": "How much is undergraduate tuition per semester?"
+     }'
+```
+
+**SSE Event Stream Output:**
+```
+data: {"type": "token", "content": "Full-Time"}
+data: {"type": "token", "content": " Undergraduate Tuition is $4,200 USD per semester."}
+data: {"type": "done", "answer": "Full-Time Undergraduate Tuition is $4,200 USD per semester.", "escalated": false, "suggested_chips": ["Scholarships & Financial Aid", "Monthly Installment Plans", "Registration Deadlines"], ...}
+```
+
+### 3. Webhook Endpoint for Telegram / n8n (`POST /api/webhook`)
 
 **Request:**
 ```bash
@@ -202,7 +223,7 @@ curl -X POST "http://localhost:8000/api/webhook" \
      }'
 ```
 
-### 3. Telemetry & Metrics Endpoint (`GET /api/metrics`)
+### 4. Telemetry & Metrics Endpoint (`GET /api/metrics`)
 
 **Request:**
 ```bash
@@ -213,16 +234,16 @@ curl http://localhost:8000/api/metrics
 ```json
 {
   "total_queries_processed": 14,
+  "total_tokens_used": 4790,
+  "prompt_tokens": 4210,
+  "completion_tokens": 580,
+  "token_limit_monthly": 1000000,
+  "token_usage_percentage": 0.479,
   "escalation_metrics": {
     "total_escalations": 2,
     "escalation_rate_pct": 14.29,
     "pre_llm_escalations_saved_cost": 1,
     "post_llm_escalations": 1
-  },
-  "token_usage": {
-    "prompt_tokens": 4210,
-    "completion_tokens": 580,
-    "total_tokens": 4790
   },
   "financial_metrics": {
     "total_estimated_cost_usd": 0.000980,
@@ -235,6 +256,19 @@ curl http://localhost:8000/api/metrics
   }
 }
 ```
+
+---
+
+## n8n Automation Workflow Setup
+
+The project includes an exportable n8n workflow file (`n8n_workflow.json`):
+
+1. Open your **n8n instance** (Self-hosted or Cloud).
+2. Go to **Workflows** > **Import from File** and select `n8n_workflow.json`.
+3. The workflow automatically connects:
+   - **Telegram Trigger / Webhook Trigger** $\rightarrow$ Captures student message.
+   - **HTTP Request** $\rightarrow$ Dispatches query to `POST http://localhost:8000/api/chat`.
+   - **IF Node (`Is Escalated?`)** $\rightarrow$ Routes normal answers to the user and triggers an automated alert with `Ticket ID` to the Human Admissions team when escalation is needed.
 
 ---
 
@@ -260,6 +294,6 @@ This generates `university_admissions_rag_assistant.zip` in the root directory c
 
 ---
 
-## License
+## Author
 
-This project is licensed under the MIT License. Developed for Technological University Admissions.
+Diego Andres Ospino Barrios

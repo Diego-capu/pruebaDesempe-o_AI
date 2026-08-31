@@ -1,0 +1,177 @@
+{
+  "name": "TechUni Admissions AI Assistant - Telegram & Webhook Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "admissions-query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "admissions-query-webhook"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "2",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [240, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json.body.message.text || $json.body.query || $json.text || $json.message }}\",\n  \"session_id\": \"{{ $json.body.chat_id || $json.chat?.id || 'n8n_session' }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "3",
+      "name": "Query RAG Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.escalated }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "Is Escalated?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [740, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"answer\": \"{{ $json.answer }}\",\n  \"escalated\": false,\n  \"sources\": {{ JSON.stringify($json.sources) }},\n  \"suggested_chips\": {{ JSON.stringify($json.suggested_chips) }}\n}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Respond to User (Normal)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"escalated\",\n  \"answer\": \"{{ $json.answer }}\",\n  \"escalated\": true,\n  \"ticket_id\": \"{{ $json.escalation_details.ticket_id }}\",\n  \"stage\": \"{{ $json.escalation_details.stage }}\"\n}",
+        "options": {}
+      },
+      "id": "6",
+      "name": "Respond to User (Escalated)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 500]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id || '-1001234567890' }}",
+        "text": "=🚨 *HUMAN ESCALATION ALERT*\n\n*Ticket ID:* `{{ $json.escalation_details.ticket_id }}`\n*Filter Stage:* {{ $json.escalation_details.stage }}\n*Student Query:* {{ $('Query RAG Backend').item.json.query || 'Refer to ticket' }}\n\n*Assistant Note:* {{ $json.answer }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "7",
+      "name": "Notify Human Advisor (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1240, 500]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Query RAG Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Query RAG Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query RAG Backend": {
+      "main": [
+        [
+          {
+            "node": "Is Escalated?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Escalated?": {
+      "main": [
+        [
+          {
+            "node": "Respond to User (Escalated)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Human Advisor (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to User (Normal)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "techuni-admissions-assistant"
+  },
+  "id": "techuni-admissions-flow",
+  "tags": []
+}

@@ -13,24 +13,35 @@ class EscalationService:
         self.similarity_threshold = similarity_threshold
         self.tickets: List[Dict[str, Any]] = []
 
-    def evaluate_pre_llm(self, retrieved_chunks: List[Dict[str, Any]]) -> Tuple[bool, str, float]:
+    def filter_relevant_chunks(self, retrieved_chunks: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], float]:
         """
-        Filter 1: Evaluates retrieved chunks before calling the LLM.
-        Returns: (should_escalate: bool, reason: str, max_similarity: float)
+        Filters retrieved chunks based on similarity threshold without directly escalating.
+        Returns: (relevant_chunks: List, max_similarity: float)
         """
         if not retrieved_chunks:
-            return True, "No document chunks retrieved from vector store.", 0.0
+            return [], 0.0
+        max_similarity = max((chunk.get("similarity", 0.0) for chunk in retrieved_chunks), default=0.0)
+        relevant = [c for c in retrieved_chunks if c.get("similarity", 0.0) >= self.similarity_threshold]
+        return relevant, max_similarity
 
-        max_similarity = max(chunk.get("similarity", 0.0) for chunk in retrieved_chunks)
+    def evaluate_pre_llm(self, retrieved_chunks: List[Dict[str, Any]]) -> Tuple[bool, str, float]:
+        """
+        Evaluates retrieved chunks similarity.
+        Returns: (has_relevant_chunks: bool, reason: str, max_similarity: float)
+        """
+        if not retrieved_chunks:
+            return False, "No document chunks retrieved from vector store.", 0.0
+
+        max_similarity = max((chunk.get("similarity", 0.0) for chunk in retrieved_chunks), default=0.0)
 
         if max_similarity < self.similarity_threshold:
             return (
-                True,
+                False,
                 f"Retrieved context similarity ({max_similarity:.4f}) is below confidence threshold ({self.similarity_threshold:.4f}).",
                 max_similarity
             )
 
-        return False, "", max_similarity
+        return True, "Relevant context found.", max_similarity
 
     def evaluate_post_llm(self, llm_output: str) -> Tuple[bool, str]:
         """

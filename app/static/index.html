@@ -1,531 +1,584 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TechUni Intelligent Admissions AI Assistant (RAG Pipeline)</title>
+    <title>Miku AI — Admissions Assistant</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/gif" href="/static/miku.gif">
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-dark: #090d16;
-            --card-bg: rgba(18, 24, 38, 0.75);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent-primary: #6366f1;
-            --accent-glow: #818cf8;
-            --accent-teal: #14b8a6;
-            --accent-amber: #f59e0b;
-            --accent-rose: #f43f5e;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --font-sans: 'Plus Jakarta Sans', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: var(--font-sans);
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.10) 0px, transparent 50%);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header */
-        header {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--card-border);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo-group {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-teal));
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 1.25rem;
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-        }
-
-        .logo-text h1 {
-            font-size: 1.15rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .logo-text p {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(20, 184, 166, 0.1);
-            border: 1px solid rgba(20, 184, 166, 0.3);
-            color: var(--accent-teal);
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--accent-teal);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--accent-teal);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 420px;
-            gap: 1.5rem;
-            flex: 1;
-        }
-
-        /* Chat Panel */
-        .chat-panel {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            backdrop-filter: blur(12px);
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-            max-height: 620px;
-        }
-
-        .message {
-            display: flex;
-            gap: 0.85rem;
-            max-width: 85%;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.user {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-
-        .avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .message.assistant .avatar {
-            background: linear-gradient(135deg, #4f46e5, #0891b2);
-        }
-
-        .message.user .avatar {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-main);
-        }
-
-        .bubble {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid var(--card-border);
-            padding: 1rem 1.2rem;
-            border-radius: 14px;
-            font-size: 0.92rem;
-            line-height: 1.6;
-        }
-
-        .message.user .bubble {
-            background: linear-gradient(135deg, var(--accent-primary), #4338ca);
-            border: none;
-        }
-
-        .escalation-box {
-            margin-top: 0.75rem;
-            background: rgba(244, 63, 94, 0.1);
-            border: 1px solid rgba(244, 63, 94, 0.3);
-            border-radius: 8px;
-            padding: 0.75rem;
-            font-size: 0.82rem;
-            color: #fecdd3;
-        }
-
-        .escalation-box strong {
-            color: var(--accent-rose);
-        }
-
-        .meta-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            margin-top: 0.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-muted);
-        }
-
-        /* Suggestions */
-        .suggestions {
-            padding: 0.75rem 1.5rem;
-            display: flex;
-            gap: 0.5rem;
-            overflow-x: auto;
-            border-top: 1px solid var(--card-border);
-            background: rgba(15, 23, 42, 0.4);
-        }
-
-        .chip {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--card-border);
-            color: var(--text-muted);
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s ease;
-        }
-
-        .chip:hover {
-            background: rgba(99, 102, 241, 0.2);
-            border-color: var(--accent-primary);
-            color: #fff;
-        }
-
-        .chip.test-escalation {
-            border-color: rgba(244, 63, 94, 0.4);
-            color: #fda4af;
-        }
-
-        .chip.test-escalation:hover {
-            background: rgba(244, 63, 94, 0.2);
-        }
-
-        /* Input Bar */
-        .input-bar {
-            padding: 1rem 1.5rem;
-            display: flex;
-            gap: 0.75rem;
-            background: rgba(15, 23, 42, 0.8);
-            border-top: 1px solid var(--card-border);
-        }
-
-        .input-bar input {
-            flex: 1;
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 0.85rem 1.1rem;
-            color: #fff;
-            font-family: var(--font-sans);
-            font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .input-bar input:focus {
-            border-color: var(--accent-primary);
-        }
-
-        .input-bar button {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-teal));
-            border: none;
-            color: #fff;
-            padding: 0 1.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .input-bar button:hover {
-            opacity: 0.9;
-        }
-
-        /* Metrics & Telemetry Sidebar */
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 1.25rem;
-            backdrop-filter: blur(12px);
-        }
-
-        .card-header {
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.85rem;
-        }
-
-        .metric-box {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 0.85rem;
-        }
-
-        .metric-val {
-            font-family: var(--font-mono);
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin-top: 0.2rem;
-        }
-
-        .metric-lbl {
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        /* Source Inspector */
-        .chunk-item {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--card-border);
-            border-left: 3px solid var(--accent-teal);
-            border-radius: 6px;
-            padding: 0.65rem 0.85rem;
-            margin-bottom: 0.65rem;
-            font-size: 0.78rem;
-        }
-
-        .chunk-meta {
-            display: flex;
-            justify-content: space-between;
-            color: var(--accent-teal);
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            margin-bottom: 0.3rem;
-        }
-
-        .tickets-list {
-            max-height: 200px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .ticket-item {
-            background: rgba(244, 63, 94, 0.08);
-            border: 1px solid rgba(244, 63, 94, 0.2);
-            border-radius: 6px;
-            padding: 0.6rem;
-            font-size: 0.78rem;
-        }
-
-        .ticket-id {
-            font-family: var(--font-mono);
-            font-weight: 700;
-            color: var(--accent-rose);
-        }
-
-        /* Responsiveness */
-        @media (max-width: 1024px) {
-            .container {
-                grid-template-columns: 1fr;
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN (Production warning suppressed) -->
+    <script>
+        (function() {
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+                originalWarn.apply(console, args);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        neutral: {
+                            850: '#1f1f23',
+                            900: '#18181b',
+                            950: '#09090b',
+                        }
+                    }
+                }
             }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712;
+            color: #f4f4f5;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(63, 63, 70, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(113, 113, 122, 0.6);
+        }
+
+        /* Markdown styling */
+        .markdown-content p {
+            margin-bottom: 0.5rem;
+        }
+        .markdown-content p:last-child {
+            margin-bottom: 0;
+        }
+        .markdown-content ul, .markdown-content ol {
+            margin-left: 1.25rem;
+            margin-bottom: 0.5rem;
+            list-style-type: disc;
+        }
+        .markdown-content li {
+            margin-bottom: 0.2rem;
+        }
+        .markdown-content strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .markdown-content code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.15rem 0.35rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #38bdf8;
+        }
+
+        /* Streaming Blinking Cursor */
+        .cursor-blink {
+            display: inline-block;
+            width: 6px;
+            height: 14px;
+            background-color: #2dd4bf;
+            vertical-align: middle;
+            margin-left: 3px;
+            animation: blink 0.8s infinite;
+            border-radius: 1px;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Parallax Layer Transitions */
+        .parallax-layer {
+            position: absolute;
+            pointer-events: none;
+            user-select: none;
+            transition: transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform;
+        }
+
+        /* Dynamic Glassmorphism Transition */
+        .translucent-glass {
+            background-color: rgba(9, 9, 11, 0.25);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-color: rgba(39, 39, 42, 0.4);
+            opacity: 0.88;
+            transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .translucent-glass:hover,
+        .translucent-glass:focus-within,
+        .translucent-glass.is-active {
+            background-color: rgba(9, 9, 11, 0.78);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-color: rgba(63, 63, 70, 0.85);
+            opacity: 1;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.08);
+        }
+
+        .bubble-translucent {
+            background-color: rgba(24, 24, 27, 0.45);
+            backdrop-filter: blur(8px);
+            border-color: rgba(39, 39, 42, 0.4);
+            transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .translucent-glass:hover .bubble-translucent,
+        .translucent-glass:focus-within .bubble-translucent,
+        .translucent-glass.is-active .bubble-translucent {
+            background-color: rgba(24, 24, 27, 0.92);
+            border-color: rgba(39, 39, 42, 0.8);
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col relative antialiased selection:bg-teal-500/30 selection:text-teal-200">
 
-    <header>
-        <div class="logo-group">
-            <div class="logo-icon">T</div>
-            <div class="logo-text">
-                <h1>TechUni Admissions AI</h1>
-                <p>FastAPI + ChromaDB RAG Pipeline</p>
-            </div>
-        </div>
-        <div class="status-badge">
-            <span class="status-dot"></span>
-            RAG Engine Active
-        </div>
-    </header>
+    <!-- 3D Parallax Background Layer (Fixed & Non-blocking) -->
+    <div id="parallaxContainer" class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <!-- Vignette & Glow Overlay -->
+        <div class="absolute inset-0 z-[50] bg-[radial-gradient(ellipse_at_center,rgba(15,23,42,0.3)_0%,rgba(3,7,18,0.85)_100%)] pointer-events-none"></div>
 
-    <div class="container">
-        <!-- Left: Chat Interface -->
-        <div class="chat-panel">
-            <div class="chat-messages" id="chatMessages">
-                <div class="message assistant">
-                    <div class="avatar">AI</div>
-                    <div class="bubble">
-                        Welcome to <strong>Technological University Admissions</strong>! I can answer questions about degree programs, tuition fees, financial aid, application deadlines, and certifications grounded directly in our official business documents.
-                    </div>
-                </div>
-            </div>
+        <!-- Parallax Background Images (Locally Served for Zero Latency) -->
+        <img class="parallax-layer" data-speed-x="0.03" data-speed-y="0.038" data-speed-z="0" data-rotation="0" style="width:3200px; top:calc(50% - 50px); left:calc(50% + 0px); z-index:1; transform:translate(-50%, -50%);" src="/static/parallax/background.png" alt="background" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.27" data-speed-y="0.32" data-speed-z="0" data-rotation="0" style="width:1900px; top:calc(50% - 100px); left:calc(50% + 300px); z-index:2; transform:translate(-50%, -50%);" src="/static/parallax/fog-7.png" alt="fog-7" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.095" data-speed-y="0.005" data-speed-z="0" data-rotation="0" style="width:1200px; top:calc(50% + 169px); left:calc(50% + 330px); z-index:3; transform:translate(-50%, -50%);" src="/static/parallax/mountain-10.png" alt="mountain-10" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer opacity-30" data-speed-x="0.25" data-speed-y="0.28" data-speed-z="0" data-rotation="0" style="width:2200px; top:calc(50% + 285px); left:calc(50%); z-index:4; transform:translate(-50%, -50%);" src="/static/parallax/fog-6.png" alt="fog-6" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.125" data-speed-y="0.155" data-speed-z="0.15" data-rotation="0.02" style="width:670px; top:calc(50% + 313px); left:calc(50% - 557px); z-index:5; transform:translate(-50%, -50%);" src="/static/parallax/mountain-9.png" alt="mountain-9" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.16" data-speed-y="0.105" data-speed-z="0" data-rotation="0" style="width:650px; top:calc(50% + 360px); left:calc(50% + 40px); z-index:6; transform:translate(-50%, -50%);" src="/static/parallax/fog-5.png" alt="fog-5" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.1" data-speed-y="0.1" data-speed-z="0" data-rotation="0.09" style="width:738px; top:calc(50% + 223px); left:calc(50% + 495px); z-index:7; transform:translate(-50%, -50%);" src="/static/parallax/mountain-7.png" alt="mountain-7" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.065" data-speed-y="0.05" data-speed-z="0.05" data-rotation="0.12" style="width:408px; top:calc(50% + 120px); left:calc(50% + 590px); z-index:8; transform:translate(-50%, -50%);" src="/static/parallax/mountain-6.png" alt="mountain-6" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer opacity-50" data-speed-x="0.135" data-speed-y="0.1" data-speed-z="0" data-rotation="0" style="width:590px; top:calc(50% + 223px); left:calc(50% + 460px); z-index:9; transform:translate(-50%, -50%);" src="/static/parallax/fog-4.png" alt="fog-4" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.08" data-speed-y="0.05" data-speed-z="0.13" data-rotation="0.1" style="width:725px; top:calc(50% + 320px); left:calc(50% + 230px); z-index:10; transform:translate(-50%, -50%);" src="/static/parallax/mountain-5.png" alt="mountain-5" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.11" data-speed-y="0.018" data-speed-z="0" data-rotation="0" style="width:1600px; top:calc(50% + 210px); left:calc(50% + 5px); z-index:11; transform:translate(-50%, -50%);" src="/static/parallax/fog-3.png" alt="fog-3" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.059" data-speed-y="0.024" data-speed-z="0.35" data-rotation="0.14" style="width:1100px; top:calc(50% + 196px); left:calc(50% - 698px); z-index:12; transform:translate(-50%, -50%);" src="/static/parallax/mountain-4.png" alt="mountain-4" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.04" data-speed-y="0.018" data-speed-z="0.32" data-rotation="0.05" style="width:630px; top:calc(50% - 20px); left:calc(50% + 750px); z-index:13; transform:translate(-50%, -50%);" src="/static/parallax/mountain-3.png" alt="mountain-3" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.15" data-speed-y="0.0115" data-speed-z="0" data-rotation="0" style="width:1100px; top:calc(50% - 20px); left:calc(50% + 698px); z-index:14; transform:translate(-50%, -50%);" src="/static/parallax/fog-2.png" alt="fog-2" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.0235" data-speed-y="0.013" data-speed-z="0.42" data-rotation="0.15" style="width:800px; top:calc(50% + 256px); left:calc(50% + 528px); z-index:15; transform:translate(-50%, -50%);" src="/static/parallax/mountain-2.png" alt="mountain-2" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer" data-speed-x="0.027" data-speed-y="0.018" data-speed-z="0.53" data-rotation="0.2" style="width:1100px; top:calc(50% + 196px); left:calc(50% - 728px); z-index:16; transform:translate(-50%, -50%);" src="/static/parallax/mountain-1.png" alt="mountain-1" onerror="this.style.opacity='0'" />
+        <img class="parallax-layer opacity-50" data-speed-x="0.12" data-speed-y="0.01" data-speed-z="0" data-rotation="0" style="width:1900px; top:calc(100% - 355px); left:calc(50% + 100px); z-index:17; transform:translate(-50%, -50%);" src="/static/parallax/fog-1.png" alt="fog-1" onerror="this.style.opacity='0'" />
 
-            <!-- Quick Suggestion Chips -->
-            <div class="suggestions">
-                <div class="chip" onclick="sendPrompt('What undergraduate degree programs are offered and what are the class schedules?')">📚 Programs & Schedules</div>
-                <div class="chip" onclick="sendPrompt('How much is full-time undergraduate tuition per semester?')">💰 Tuition & Fees</div>
-                <div class="chip" onclick="sendPrompt('Are there any scholarships for women in STEM?')">🎓 Women in STEM Grant</div>
-                <div class="chip" onclick="sendPrompt('What AWS or Cisco industry certifications are included in the curriculum?')">📜 Certifications</div>
-                <div class="chip test-escalation" onclick="sendPrompt('What is the recipe for making pepperoni pizza?')">⚠️ Test Escalation (Out-of-scope)</div>
-            </div>
-
-            <!-- Input Bar -->
-            <div class="input-bar">
-                <input type="text" id="userInput" placeholder="Ask about programs, tuition, application deadlines..." onkeydown="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()">Send Query</button>
-            </div>
-        </div>
-
-        <!-- Right: Metrics & RAG Inspector Sidebar -->
-        <div class="sidebar">
-            <!-- Live Metrics Card -->
-            <div class="card">
-                <div class="card-header">
-                    <span>Telemetry & Metrics</span>
-                    <button onclick="loadMetrics()" style="background:none; border:none; color:var(--accent-teal); cursor:pointer; font-size:0.75rem;">↻ Refresh</button>
-                </div>
-                <div class="metrics-grid">
-                    <div class="metric-box">
-                        <div class="metric-lbl">Total Queries</div>
-                        <div class="metric-val" id="metricQueries">0</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-lbl">Escalation Rate</div>
-                        <div class="metric-val" style="color:var(--accent-rose);" id="metricEscalationRate">0%</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-lbl">API Cost (USD)</div>
-                        <div class="metric-val" style="color:var(--accent-teal);" id="metricCost">$0.0000</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-lbl">Cache Hit Rate</div>
-                        <div class="metric-val" style="color:var(--accent-amber);" id="metricCacheHit">0%</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Source Inspector Card -->
-            <div class="card">
-                <div class="card-header">RAG Context Inspector</div>
-                <div id="inspectorContent">
-                    <p style="font-size:0.8rem; color:var(--text-muted);">Ask a question to inspect retrieved vector store chunks and cosine similarity scores.</p>
-                </div>
-            </div>
-
-            <!-- Human Escalation Log -->
-            <div class="card">
-                <div class="card-header">Human Escalation Tickets</div>
-                <div class="tickets-list" id="ticketsList">
-                    <p style="font-size:0.8rem; color:var(--text-muted);">No escalation tickets generated yet.</p>
-                </div>
-            </div>
+        <!-- 3D Floating Title Watermark -->
+        <div id="parallaxTitle" class="parallax-layer z-[25] text-teal-400/10 font-black tracking-widest uppercase select-none text-center" style="top:calc(50% - 140px); left:50%; transform:translate(-50%, -50%);">
+            <span class="text-[12rem] leading-none max-lg:text-[8rem] max-md:text-[4.5rem]">MIKU AI</span>
         </div>
     </div>
 
+    <!-- Foreground Application Content Layer -->
+    <div class="relative z-10 w-full min-h-screen flex flex-col pointer-events-auto">
+
+        <!-- Minimalist Header -->
+        <header class="sticky top-0 z-50 border-b border-neutral-800/60 bg-neutral-950/60 backdrop-blur-xl px-6 py-3 flex items-center justify-between shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-teal-500/25 border border-teal-500/40 flex items-center justify-center bg-neutral-900">
+                    <img src="/static/miku.gif" alt="Miku AI" class="w-full h-full object-cover" />
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold text-neutral-100 tracking-tight flex items-center gap-2">
+                        Miku AI
+                        <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-teal-950/60 text-teal-400 border border-teal-500/30">RAG v1.0</span>
+                    </h1>
+                    <p class="text-xs text-neutral-400">Admissions Assistant • Real-Time SSE Pipeline</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Toggle Telemetry & Inspector Button -->
+                <button onclick="toggleTelemetry()" id="toggleTelemetryBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-800/80 hover:border-neutral-700 bg-neutral-900/70 hover:bg-neutral-800 text-xs font-medium text-neutral-300 hover:text-white transition-all backdrop-blur-md cursor-pointer active:scale-95 shadow-sm">
+                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-teal-400"></i>
+                    <span id="toggleTelemetryText">Show Telemetry</span>
+                </button>
+
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-950/40 border border-teal-500/30 text-teal-400 text-xs font-medium backdrop-blur-md">
+                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse shadow-sm shadow-teal-400/50"></span>
+                    <span>Online</span>
+                </div>
+
+                <a href="/docs" target="_blank" class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors px-2.5 py-1.5 rounded-lg border border-neutral-800 hover:border-neutral-700 bg-neutral-900/60 backdrop-blur-md">
+                    API Docs
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Layout Container (Centered max-w-3xl by default) -->
+        <main id="mainContainer" class="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 transition-all duration-500">
+
+            <!-- Chat Section with Dynamic Transparency & Centered Focus -->
+            <section id="chatSection" class="translucent-glass flex flex-col h-[calc(100vh-6.5rem)] min-h-[600px] border rounded-2xl overflow-hidden group">
+                
+                <!-- Agent Chat Header -->
+                <div class="px-5 py-3.5 border-b border-neutral-800/40 group-hover:border-neutral-800/80 group-focus-within:border-neutral-800/80 bg-neutral-900/30 group-hover:bg-neutral-900/70 group-focus-within:bg-neutral-900/70 backdrop-blur-md flex items-center justify-between transition-all duration-300">
+                    <div class="flex items-center gap-2.5">
+                        <img src="/static/miku.gif" alt="Miku" class="w-6 h-6 rounded-md object-cover border border-teal-500/40 shadow-sm" />
+                        <span class="text-xs font-semibold text-neutral-200 tracking-wide uppercase">Miku AI Assistant</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <span class="text-[11px] font-mono text-teal-400">Gemini / GPT-4o</span>
+                        <button onclick="toggleTelemetry()" class="text-xs text-teal-400/90 hover:text-teal-300 transition-colors flex items-center gap-1 font-medium cursor-pointer" title="Toggle telemetry metrics and context inspector">
+                            <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                            <span class="hidden sm:inline">Metrics</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Stream Area -->
+                <div class="flex-1 overflow-y-auto p-5 space-y-4" id="chatMessages">
+                    
+                    <!-- Initial Welcome Assistant Message -->
+                    <div class="flex gap-3 max-w-[88%] mr-auto">
+                        <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden border border-teal-500/40 shadow-sm shadow-teal-500/20 bg-neutral-900">
+                            <img src="/static/miku.gif" alt="Miku AI" class="w-full h-full object-cover" />
+                        </div>
+                        <div class="bubble-translucent rounded-2xl px-4 py-3 text-sm leading-relaxed text-neutral-200 border shadow-sm">
+                            <div class="markdown-content">
+                                <p>Welcome! I am <strong>Miku AI</strong>, your official Admissions Assistant. I can assist you with official information regarding academic degree programs, schedules, tuition fees, financial aid scholarships, and certifications grounded directly in our verified documents.</p>
+                            </div>
+                            
+                            <!-- Initial Suggested Quick Reply Chips -->
+                            <div class="mt-3.5 flex flex-wrap gap-1.5">
+                                <button onclick="sendPrompt('What undergraduate degree programs are offered and what are the class schedules?')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-800/70 hover:bg-neutral-700/90 text-neutral-300 hover:text-white border border-neutral-700/50 hover:border-teal-500/50 transition-all duration-150 active:scale-95 cursor-pointer shadow-sm">
+                                    <i data-lucide="book-open" class="w-3.5 h-3.5 text-teal-400"></i>
+                                    <span>Programs & Schedules</span>
+                                </button>
+                                <button onclick="sendPrompt('How much is full-time undergraduate tuition per semester?')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-800/70 hover:bg-neutral-700/90 text-neutral-300 hover:text-white border border-neutral-700/50 hover:border-teal-500/50 transition-all duration-150 active:scale-95 cursor-pointer shadow-sm">
+                                    <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5 text-teal-400"></i>
+                                    <span>Tuition & Fees</span>
+                                </button>
+                                <button onclick="sendPrompt('Are there any scholarships for women in STEM?')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-800/70 hover:bg-neutral-700/90 text-neutral-300 hover:text-white border border-neutral-700/50 hover:border-teal-500/50 transition-all duration-150 active:scale-95 cursor-pointer shadow-sm">
+                                    <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-teal-400"></i>
+                                    <span>STEM Scholarships</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Quick Suggestions Bar -->
+                <div class="px-4 py-2 border-t border-neutral-800/40 group-hover:border-neutral-800/60 group-focus-within:border-neutral-800/60 bg-neutral-900/20 group-hover:bg-neutral-900/50 group-focus-within:bg-neutral-900/50 backdrop-blur-md flex items-center gap-2 overflow-x-auto no-scrollbar transition-all duration-300" id="suggestionsBar">
+                    <span class="text-[11px] text-neutral-500 font-medium flex-shrink-0">Suggestions:</span>
+                    <button onclick="sendPrompt('What industry certifications are included in the curriculum?')" class="inline-flex items-center gap-1.5 flex-shrink-0 px-2.5 py-1 rounded-full text-xs bg-neutral-900/60 hover:bg-neutral-800 border border-neutral-800/60 hover:border-neutral-700 text-neutral-400 hover:text-neutral-200 transition-colors">
+                        <i data-lucide="award" class="w-3 h-3 text-teal-400"></i>
+                        <span>Cisco & AWS Certifications</span>
+                    </button>
+                    <button onclick="sendPrompt('Do you offer corporate discounts for groups of 20+ engineers?')" class="inline-flex items-center gap-1.5 flex-shrink-0 px-2.5 py-1 rounded-full text-xs bg-neutral-900/60 hover:bg-neutral-800 border border-neutral-800/60 hover:border-rose-700/60 text-rose-400/90 hover:text-rose-300 transition-colors">
+                        <i data-lucide="alert-circle" class="w-3 h-3 text-rose-400"></i>
+                        <span>Test Human Escalation</span>
+                    </button>
+                    <button onclick="sendPrompt('pizza')" class="inline-flex items-center gap-1.5 flex-shrink-0 px-2.5 py-1 rounded-full text-xs bg-neutral-900/60 hover:bg-neutral-800 border border-neutral-800/60 hover:border-neutral-700 text-neutral-400 hover:text-neutral-200 transition-colors">
+                        <i data-lucide="shield-alert" class="w-3 h-3 text-neutral-400"></i>
+                        <span>Test Spam Rejection</span>
+                    </button>
+                </div>
+
+                <!-- Input Bar -->
+                <form onsubmit="event.preventDefault(); sendMessage();" class="p-3.5 border-t border-neutral-800/40 group-hover:border-neutral-800/80 group-focus-within:border-neutral-800/80 bg-neutral-900/30 group-hover:bg-neutral-900/70 group-focus-within:bg-neutral-900/70 backdrop-blur-md flex gap-2 transition-all duration-300">
+                    <input
+                        type="text"
+                        id="userInput"
+                        placeholder="Ask Miku about degrees, tuition, scholarships, schedules..."
+                        class="flex-1 bg-neutral-950/70 focus:bg-neutral-950/95 border border-neutral-800/80 focus:border-teal-500 rounded-xl px-4 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 transition-all font-sans"
+                    />
+                    <button
+                        type="submit"
+                        id="sendBtn"
+                        class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white font-medium text-sm flex items-center gap-1.5 transition-all shadow-md shadow-teal-600/25 cursor-pointer disabled:opacity-40"
+                    >
+                        <span>Send</span>
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Collapsible Right Sidebar Column (Hidden by Default for Minimalist Centered Chat) -->
+            <aside id="sidebarColumn" class="hidden lg:col-span-4 space-y-4 transition-all duration-500">
+
+                <!-- Card 1: Telemetry & Metrics -->
+                <div class="translucent-glass border rounded-2xl p-4">
+                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800/50">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-teal-400"></i>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-neutral-300">Telemetry & Performance</span>
+                        </div>
+                        <button onclick="loadMetrics()" class="text-[11px] text-teal-400 hover:text-teal-300 transition-colors flex items-center gap-1 cursor-pointer">
+                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div class="bg-neutral-900/50 border border-neutral-800/60 rounded-xl p-3">
+                            <span class="text-[11px] uppercase tracking-wider text-neutral-400">Total Queries</span>
+                            <div class="font-mono text-lg font-bold text-neutral-100 mt-0.5" id="metricQueries">0</div>
+                        </div>
+                        <div class="bg-neutral-900/50 border border-neutral-800/60 rounded-xl p-3">
+                            <span class="text-[11px] uppercase tracking-wider text-neutral-400">Escalation Rate</span>
+                            <div class="font-mono text-lg font-bold text-rose-400 mt-0.5" id="metricEscalationRate">0%</div>
+                        </div>
+                        <div class="bg-neutral-900/50 border border-neutral-800/60 rounded-xl p-3">
+                            <span class="text-[11px] uppercase tracking-wider text-neutral-400">API Cost (USD)</span>
+                            <div class="font-mono text-lg font-bold text-teal-400 mt-0.5" id="metricCost">$0.0000</div>
+                        </div>
+                        <div class="bg-neutral-900/50 border border-neutral-800/60 rounded-xl p-3">
+                            <span class="text-[11px] uppercase tracking-wider text-neutral-400">Cache Hit Rate</span>
+                            <div class="font-mono text-lg font-bold text-amber-400 mt-0.5" id="metricCacheHit">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Token Quota & Consumption -->
+                <div class="translucent-glass border rounded-2xl p-4">
+                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800/50">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="gauge" class="w-4 h-4 text-teal-400"></i>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-neutral-300">Token Consumption</span>
+                        </div>
+                        <span class="font-mono text-xs font-bold text-teal-400" id="quotaPercent">0.00%</span>
+                    </div>
+
+                    <div class="flex justify-between items-baseline mb-2">
+                        <span class="text-xs text-neutral-400">Total Tokens Used</span>
+                        <span class="font-mono font-bold text-sm text-neutral-100" id="metricTotalTokens">0 tokens</span>
+                    </div>
+
+                    <!-- Sleek Quota Progress Bar -->
+                    <div class="w-full h-2.5 bg-neutral-900/80 rounded-full overflow-hidden border border-neutral-800/80 relative">
+                        <div id="quotaBarFill" class="h-full bg-gradient-to-r from-teal-500 via-teal-400 to-indigo-400 rounded-full transition-all duration-500 shadow-sm shadow-teal-500/30" style="width: 0%;"></div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-2.5 text-[11px] font-mono text-neutral-400">
+                        <span id="metricTokensBreakdown" class="flex items-center gap-1.5">
+                            <span class="flex items-center gap-1"><i data-lucide="arrow-down-left" class="w-3 h-3 text-teal-400"></i>In: 0</span>
+                            <span class="text-neutral-600">|</span>
+                            <span class="flex items-center gap-1"><i data-lucide="arrow-up-right" class="w-3 h-3 text-indigo-400"></i>Out: 0</span>
+                        </span>
+                        <span id="metricMonthlyLimit">Limit: 1,000,000</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: RAG Context Inspector -->
+                <div class="translucent-glass border rounded-2xl p-4">
+                    <div class="flex items-center gap-2 pb-3 mb-3 border-b border-neutral-800/50">
+                        <i data-lucide="file-search" class="w-4 h-4 text-teal-400"></i>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-300">RAG Context Inspector</span>
+                    </div>
+                    <div id="inspectorContent" class="space-y-2.5 max-h-48 overflow-y-auto">
+                        <p class="text-xs text-neutral-400 italic">Submit a question to inspect retrieved ChromaDB vector chunks and similarity scores.</p>
+                    </div>
+                </div>
+
+                <!-- Card 4: Human Escalation Tickets -->
+                <div class="translucent-glass border rounded-2xl p-4">
+                    <div class="flex items-center gap-2 pb-3 mb-3 border-b border-neutral-800/50">
+                        <i data-lucide="ticket" class="w-4 h-4 text-rose-400"></i>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-neutral-300">Escalation Tickets</span>
+                    </div>
+                    <div id="ticketsList" class="space-y-2 max-h-40 overflow-y-auto">
+                        <p class="text-xs text-neutral-400 italic">No human escalation tickets generated yet.</p>
+                    </div>
+                </div>
+
+            </aside>
+        </main>
+    </div>
+
+    <!-- Client Scripts: 3D Parallax Interaction & Live RAG Engine -->
     <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // 3D Parallax Mouse Tracking Engine
+        (function initParallax() {
+            const layers = document.querySelectorAll('.parallax-layer');
+            const titleEl = document.getElementById('parallaxTitle');
+
+            window.addEventListener('mousemove', (e) => {
+                const newXValue = e.clientX - window.innerWidth / 2;
+                const newYValue = e.clientY - window.innerHeight / 2;
+                const newRotateDegree = (newXValue / (window.innerWidth / 2)) * 20;
+
+                layers.forEach((el) => {
+                    if (el === titleEl) return;
+                    const speedX = parseFloat(el.dataset.speedX || 0);
+                    const speedY = parseFloat(el.dataset.speedY || 0);
+                    const speedZ = parseFloat(el.dataset.speedZ || 0);
+                    const rotation = parseFloat(el.dataset.rotation || 0);
+
+                    const computedLeft = parseFloat(getComputedStyle(el).left.replace('px', '')) || (window.innerWidth / 2);
+                    const isInLeft = computedLeft < window.innerWidth / 2 ? 1 : -1;
+                    const zValue = (e.clientX - computedLeft) * isInLeft * 0.1;
+
+                    el.style.transform = `perspective(2300px) translateZ(${zValue * speedZ}px) rotateY(${newRotateDegree * rotation}deg) translateX(calc(-50% + ${-newXValue * speedX}px)) translateY(calc(-50% + ${newYValue * speedY}px))`;
+                });
+
+                if (titleEl) {
+                    const textSpeedX = 0.07;
+                    const textSpeedY = 0.05;
+                    const textSpeedZ = 0.08;
+                    const textRotation = 0.04;
+                    const computedLeft = parseFloat(getComputedStyle(titleEl).left.replace('px', '')) || (window.innerWidth / 2);
+                    const isInLeft = computedLeft < window.innerWidth / 2 ? 1 : -1;
+                    const zValue = (e.clientX - computedLeft) * isInLeft * 0.1;
+
+                    titleEl.style.transform = `perspective(2300px) translateZ(${zValue * textSpeedZ}px) rotateY(${newRotateDegree * textRotation}deg) translateX(calc(-50% + ${-newXValue * textSpeedX}px)) translateY(calc(-50% + ${newYValue * textSpeedY}px))`;
+                }
+            });
+        })();
+
+        // Telemetry Sidebar Toggle State
+        let isSidebarOpen = false;
+
+        function toggleTelemetry() {
+            isSidebarOpen = !isSidebarOpen;
+            const sidebar = document.getElementById('sidebarColumn');
+            const chatSection = document.getElementById('chatSection');
+            const mainContainer = document.getElementById('mainContainer');
+            const toggleBtnText = document.getElementById('toggleTelemetryText');
+
+            if (isSidebarOpen) {
+                sidebar.classList.remove('hidden');
+                mainContainer.classList.remove('max-w-3xl');
+                mainContainer.classList.add('max-w-7xl', 'grid', 'grid-cols-1', 'lg:grid-cols-12', 'gap-5');
+                chatSection.classList.remove('lg:col-span-12');
+                chatSection.classList.add('lg:col-span-8');
+                if (toggleBtnText) toggleBtnText.innerText = 'Hide Telemetry';
+                loadMetrics();
+            } else {
+                sidebar.classList.add('hidden');
+                mainContainer.classList.remove('max-w-7xl', 'grid', 'grid-cols-1', 'lg:grid-cols-12', 'gap-5');
+                mainContainer.classList.add('max-w-3xl');
+                chatSection.classList.remove('lg:col-span-8');
+                if (toggleBtnText) toggleBtnText.innerText = 'Show Telemetry';
+            }
+            lucide.createIcons();
+        }
+
+        // Input activity listener to keep solid state when user is writing
+        const inputEl = document.getElementById('userInput');
+        const chatSection = document.getElementById('chatSection');
+        if (inputEl && chatSection) {
+            inputEl.addEventListener('input', () => {
+                if (inputEl.value.trim().length > 0) {
+                    chatSection.classList.add('is-active');
+                } else {
+                    chatSection.classList.remove('is-active');
+                }
+            });
+        }
+
+        // Chat & SSE Streaming Pipeline
         async function sendMessage() {
             const input = document.getElementById('userInput');
             const query = input.value.trim();
             if (!query) return;
 
             input.value = '';
+            if (chatSection) chatSection.classList.add('is-active');
             appendUserMessage(query);
 
-            // Show typing indicator
-            const typingId = appendTypingIndicator();
+            const messageObj = createAssistantStreamingMessage();
+            let accumulatedContent = '';
+            let finalData = null;
 
             try {
-                const response = await fetch('/api/chat', {
+                const response = await fetch('/api/chat/stream', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ query: query, session_id: 'web_session' })
                 });
 
-                const data = await response.json();
-                removeMessage(typingId);
-                appendAssistantMessage(data);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
 
-                // Update Inspector and Metrics
-                updateInspector(data);
-                loadMetrics();
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const chunks = buffer.split('\n\n');
+                    buffer = chunks.pop();
+
+                    for (const chunk of chunks) {
+                        const trimmed = chunk.trim();
+                        if (trimmed.startsWith('data: ')) {
+                            const jsonStr = trimmed.substring(6);
+                            try {
+                                const parsed = JSON.parse(jsonStr);
+                                if (parsed.type === 'token') {
+                                    accumulatedContent += parsed.content;
+                                    messageObj.updateText(accumulatedContent);
+                                } else if (parsed.type === 'done') {
+                                    finalData = parsed;
+                                }
+                            } catch (e) {
+                                console.error('SSE parse error:', e);
+                            }
+                        }
+                    }
+                }
+
+                if (finalData) {
+                    messageObj.finalize(finalData);
+                    updateInspector(finalData);
+                    loadMetrics();
+                } else {
+                    messageObj.finalize({ answer: accumulatedContent, latency_ms: 0, estimated_cost_usd: 0 });
+                    loadMetrics();
+                }
+
             } catch (err) {
-                removeMessage(typingId);
-                appendSystemError("Failed to reach admissions server. Please check backend status.");
+                console.error("Streaming error:", err);
+                try {
+                    const res = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: query, session_id: 'web_session' })
+                    });
+                    const data = await res.json();
+                    messageObj.finalize(data);
+                    updateInspector(data);
+                    loadMetrics();
+                } catch (fallbackErr) {
+                    messageObj.showError("Failed to connect to admissions server. Please verify backend status.");
+                }
+            } finally {
+                if (chatSection && (!input.value || input.value.trim().length === 0)) {
+                    setTimeout(() => {
+                        if (!input.matches(':focus') && input.value.trim().length === 0) {
+                            chatSection.classList.remove('is-active');
+                        }
+                    }, 2000);
+                }
             }
         }
 
@@ -537,86 +590,159 @@
         function appendUserMessage(text) {
             const container = document.getElementById('chatMessages');
             const msg = document.createElement('div');
-            msg.className = 'message user';
+            msg.className = 'flex gap-3 max-w-[88%] ml-auto flex-row-reverse animate-fadeIn';
             msg.innerHTML = `
-                <div class="avatar">You</div>
-                <div class="bubble">${escapeHtml(text)}</div>
+                <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-xs font-semibold bg-neutral-800 text-neutral-200 border border-neutral-700">
+                    <i data-lucide="user" class="w-4 h-4"></i>
+                </div>
+                <div class="rounded-2xl px-4 py-3 text-sm leading-relaxed bg-teal-600 text-white shadow-lg shadow-teal-600/20">
+                    ${escapeHtml(text)}
+                </div>
             `;
             container.appendChild(msg);
             container.scrollTop = container.scrollHeight;
+            lucide.createIcons();
         }
 
-        function appendAssistantMessage(data) {
+        function createAssistantStreamingMessage() {
             const container = document.getElementById('chatMessages');
             const msg = document.createElement('div');
-            msg.className = 'message assistant';
+            msg.className = 'flex gap-3 max-w-[88%] mr-auto animate-fadeIn';
 
-            let escalationHtml = '';
-            if (data.escalated) {
-                escalationHtml = `
-                    <div class="escalation-box">
-                        <strong>🚨 Human Escalation Triggered</strong><br>
-                        Stage: ${data.escalation_details.stage}<br>
-                        Ticket ID: <span style="font-family:var(--font-mono);">${data.escalation_details.ticket_id || 'N/A'}</span>
-                    </div>
-                `;
+            msg.innerHTML = `
+                <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden border border-teal-500/40 shadow-sm shadow-teal-500/20 bg-neutral-900">
+                    <img src="/static/miku.gif" alt="Miku AI" class="w-full h-full object-cover" />
+                </div>
+                <div class="bubble-container bubble-translucent rounded-2xl px-4 py-3 text-sm leading-relaxed text-neutral-200 border shadow-sm flex-1">
+                    <div class="text-content markdown-content"></div>
+                    <span class="cursor-blink"></span>
+                </div>
+            `;
+
+            container.appendChild(msg);
+            container.scrollTop = container.scrollHeight;
+            lucide.createIcons();
+
+            const bubble = msg.querySelector('.bubble-container');
+            const textSpan = msg.querySelector('.text-content');
+            const cursor = msg.querySelector('.cursor-blink');
+
+            return {
+                updateText: function(text) {
+                    textSpan.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+                    container.scrollTop = container.scrollHeight;
+                },
+                finalize: function(data) {
+                    if (cursor) cursor.remove();
+
+                    const answerText = data.answer || textSpan.innerText;
+                    textSpan.innerHTML = formatMarkdown(answerText);
+
+                    // Escalation box
+                    if (data.escalated && data.escalation_details) {
+                        const escBox = document.createElement('div');
+                        escBox.className = 'mt-3 p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl text-rose-200 text-xs flex flex-col gap-1 backdrop-blur-md';
+                        escBox.innerHTML = `
+                            <div class="flex items-center gap-1.5 font-semibold text-rose-400">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                                <span>Human Escalation Triggered</span>
+                            </div>
+                            <div class="text-neutral-300">
+                                Stage: <span class="text-neutral-100">${escapeHtml(data.escalation_details.stage)}</span>
+                            </div>
+                            <div class="font-mono text-rose-300 font-semibold">
+                                Ticket ID: ${escapeHtml(data.escalation_details.ticket_id || 'N/A')}
+                            </div>
+                        `;
+                        bubble.appendChild(escBox);
+                    }
+
+                    // Metadata Telemetry Tag
+                    const costStr = data.estimated_cost_usd ? `$${data.estimated_cost_usd.toFixed(5)}` : '$0.0000';
+                    const cacheTag = data.cached ? '<span class="text-amber-400 font-medium flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3"></i>Cached</span>' : '';
+                    const metaTag = document.createElement('div');
+                    metaTag.className = 'mt-2.5 pt-2 border-t border-neutral-800/60 flex items-center gap-3 text-[11px] font-mono text-neutral-400';
+                    metaTag.innerHTML = `
+                        <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>${data.latency_ms || 0}ms</span>
+                        <span class="flex items-center gap-1"><i data-lucide="dollar-sign" class="w-3 h-3"></i>${costStr}</span>
+                        ${cacheTag}
+                    `;
+                    bubble.appendChild(metaTag);
+
+                    // Quick Reply Chips
+                    if (data.suggested_chips && data.suggested_chips.length > 0) {
+                        const chipsContainer = document.createElement('div');
+                        chipsContainer.className = 'mt-3 flex flex-wrap gap-1.5';
+                        data.suggested_chips.forEach(chipText => {
+                            const btn = document.createElement('button');
+                            btn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700/60 hover:border-teal-500/50 transition-all duration-150 active:scale-95 cursor-pointer shadow-sm';
+                            btn.innerHTML = `<i data-lucide="sparkles" class="w-3 h-3 text-teal-400"></i><span>${escapeHtml(chipText)}</span>`;
+                            btn.onclick = () => sendPrompt(chipText);
+                            chipsContainer.appendChild(btn);
+                        });
+                        bubble.appendChild(chipsContainer);
+                    }
+
+                    container.scrollTop = container.scrollHeight;
+                    lucide.createIcons();
+                },
+                showError: function(errMsg) {
+                    if (cursor) cursor.remove();
+                    textSpan.innerHTML = `<span class="text-rose-400">${escapeHtml(errMsg)}</span>`;
+                }
+            };
+        }
+
+        function formatMarkdown(text) {
+            if (!text) return '';
+            let escaped = escapeHtml(text);
+            escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+            const lines = escaped.split('\n');
+            let inList = false;
+            let result = [];
+
+            for (let line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                    if (!inList) {
+                        result.push('<ul>');
+                        inList = true;
+                    }
+                    result.push(`<li>${trimmed.substring(2)}</li>`);
+                } else {
+                    if (inList) {
+                        result.push('</ul>');
+                        inList = false;
+                    }
+                    if (trimmed.length > 0) {
+                        result.push(`<p>${line}</p>`);
+                    }
+                }
             }
-
-            const costStr = data.estimated_cost_usd ? `$${data.estimated_cost_usd.toFixed(6)}` : '$0.0000';
-            const cacheTag = data.cached ? ' | ⚡ Cached' : '';
-
-            msg.innerHTML = `
-                <div class="avatar">AI</div>
-                <div class="bubble">
-                    ${escapeHtml(data.answer).replace(/\n/g, '<br>')}
-                    ${escalationHtml}
-                    <div class="meta-tag">
-                        <span>⏱️ ${data.latency_ms}ms</span> | <span>💰 ${costStr}</span> ${cacheTag}
-                    </div>
-                </div>
-            `;
-            container.appendChild(msg);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function appendTypingIndicator() {
-            const container = document.getElementById('chatMessages');
-            const id = 'typing_' + Date.now();
-            const msg = document.createElement('div');
-            msg.id = id;
-            msg.className = 'message assistant';
-            msg.innerHTML = `
-                <div class="avatar">AI</div>
-                <div class="bubble" style="color:var(--text-muted);">
-                    Searching admissions database & generating response...
-                </div>
-            `;
-            container.appendChild(msg);
-            container.scrollTop = container.scrollHeight;
-            return id;
-        }
-
-        function removeMessage(id) {
-            const el = document.getElementById(id);
-            if (el) el.remove();
+            if (inList) {
+                result.push('</ul>');
+            }
+            return result.join('');
         }
 
         function updateInspector(data) {
             const container = document.getElementById('inspectorContent');
             if (!data.retrieved_chunks || data.retrieved_chunks.length === 0) {
-                container.innerHTML = `<p style="font-size:0.8rem; color:var(--accent-rose);">No relevant vector store chunks retrieved for this query.</p>`;
+                container.innerHTML = `<p class="text-xs text-rose-400/80">No relevant vector store chunks retrieved for this query.</p>`;
                 return;
             }
 
             let html = '';
             data.retrieved_chunks.forEach((chunk, i) => {
                 html += `
-                    <div class="chunk-item">
-                        <div class="chunk-meta">
-                            <span>Chunk #${i+1} (${chunk.source})</span>
-                            <span>Sim: ${(chunk.similarity * 100).toFixed(1)}%</span>
+                    <div class="bg-neutral-900/60 border border-neutral-800/60 border-l-2 border-l-teal-400 rounded-lg p-2.5 text-xs backdrop-blur-md">
+                        <div class="flex justify-between items-center text-teal-400 font-mono text-[11px] mb-1">
+                            <span>Chunk #${i+1} (${escapeHtml(chunk.source)})</span>
+                            <span class="bg-teal-950/60 px-1.5 py-0.5 rounded border border-teal-500/20">${(chunk.similarity * 100).toFixed(1)}%</span>
                         </div>
-                        <div>${escapeHtml(chunk.text).substring(0, 180)}...</div>
+                        <div class="text-neutral-300 line-clamp-3">${escapeHtml(chunk.text)}</div>
                     </div>
                 `;
             });
@@ -628,24 +754,61 @@
                 const res = await fetch('/api/metrics');
                 const data = await res.json();
 
-                document.getElementById('metricQueries').innerText = data.total_queries_processed || 0;
-                document.getElementById('metricEscalationRate').innerText = (data.escalation_metrics.escalation_rate_pct || 0) + '%';
-                document.getElementById('metricCost').innerText = '$' + (data.financial_metrics.total_estimated_cost_usd || 0).toFixed(5);
-                document.getElementById('metricCacheHit').innerText = (data.cache_metrics ? data.cache_metrics.hit_rate_pct : 0) + '%';
+                const metricQueries = document.getElementById('metricQueries');
+                if (metricQueries) metricQueries.innerText = data.total_queries_processed || 0;
 
-                // Load Tickets
+                const metricEscalationRate = document.getElementById('metricEscalationRate');
+                if (metricEscalationRate) metricEscalationRate.innerText = (data.escalation_metrics.escalation_rate_pct || 0) + '%';
+
+                const metricCost = document.getElementById('metricCost');
+                if (metricCost) metricCost.innerText = '$' + (data.financial_metrics.total_estimated_cost_usd || 0).toFixed(5);
+
+                const metricCacheHit = document.getElementById('metricCacheHit');
+                if (metricCacheHit) metricCacheHit.innerText = (data.cache_metrics ? data.cache_metrics.hit_rate_pct : 0) + '%';
+
+                const totalTokens = data.total_tokens_used || (data.token_usage ? data.token_usage.total_tokens : 0) || 0;
+                const promptTokens = data.prompt_tokens || (data.token_usage ? data.token_usage.prompt_tokens : 0) || 0;
+                const completionTokens = data.completion_tokens || (data.token_usage ? data.token_usage.completion_tokens : 0) || 0;
+                const limit = data.token_limit_monthly || 1000000;
+                const usagePct = data.token_usage_percentage !== undefined ? data.token_usage_percentage : (totalTokens / limit * 100);
+
+                const metricTotalTokens = document.getElementById('metricTotalTokens');
+                if (metricTotalTokens) metricTotalTokens.innerText = Number(totalTokens).toLocaleString() + ' tokens';
+
+                const quotaPercent = document.getElementById('quotaPercent');
+                if (quotaPercent) quotaPercent.innerText = ((Number(usagePct) < 0.01 && totalTokens > 0) ? '<0.01' : Number(usagePct).toFixed(2)) + '%';
+
+                const fillEl = document.getElementById('quotaBarFill');
+                if (fillEl) {
+                    const visualWidth = Math.min(Math.max(usagePct, totalTokens > 0 ? 1.5 : 0), 100);
+                    fillEl.style.width = visualWidth + '%';
+                    if (usagePct >= 85) {
+                        fillEl.className = 'h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full transition-all duration-500';
+                    } else {
+                        fillEl.className = 'h-full bg-gradient-to-r from-teal-500 via-teal-400 to-indigo-400 rounded-full transition-all duration-500 shadow-sm shadow-teal-500/30';
+                    }
+                }
+
+                const metricTokensBreakdown = document.getElementById('metricTokensBreakdown');
+                if (metricTokensBreakdown) {
+                    metricTokensBreakdown.innerHTML = `<span class="flex items-center gap-1"><i data-lucide="arrow-down-left" class="w-3 h-3 text-teal-400"></i>In: ${Number(promptTokens).toLocaleString()}</span><span class="text-neutral-600">|</span><span class="flex items-center gap-1"><i data-lucide="arrow-up-right" class="w-3 h-3 text-indigo-400"></i>Out: ${Number(completionTokens).toLocaleString()}</span>`;
+                }
+
+                const metricMonthlyLimit = document.getElementById('metricMonthlyLimit');
+                if (metricMonthlyLimit) metricMonthlyLimit.innerText = `Limit: ${Number(limit).toLocaleString()}`;
+
+                // Tickets list
                 const ticketsContainer = document.getElementById('ticketsList');
-                if (data.recent_escalation_tickets && data.recent_escalation_tickets.length > 0) {
+                if (ticketsContainer && data.recent_escalation_tickets && data.recent_escalation_tickets.length > 0) {
                     let tHtml = '';
-                    data.recent_escalation_tickets.reverse().forEach(t => {
+                    data.recent_escalation_tickets.slice().reverse().forEach(t => {
                         tHtml += `
-                            <div class="ticket-item">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="ticket-id">${t.ticket_id}</span>
-                                    <span style="color:var(--text-muted); font-size:0.7rem;">${t.timestamp}</span>
+                            <div class="bg-rose-950/30 border border-rose-500/30 rounded-lg p-2 text-xs backdrop-blur-md">
+                                <div class="flex justify-between items-center font-mono">
+                                    <span class="text-rose-400 font-semibold">${t.ticket_id}</span>
+                                    <span class="text-neutral-500 text-[10px]">${t.timestamp}</span>
                                 </div>
-                                <div style="color:var(--text-main); margin-top:0.2rem;">Q: "${escapeHtml(t.user_query)}"</div>
-                                <div style="color:var(--text-muted); font-size:0.7rem;">Stage: ${t.filter_stage}</div>
+                                <div class="text-neutral-200 mt-1 truncate">Q: "${escapeHtml(t.user_query)}"</div>
                             </div>
                         `;
                     });
