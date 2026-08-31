@@ -1,11 +1,15 @@
-# Technological University Intelligent Admissions AI Assistant (RAG Pipeline)
+# Technological University Intelligent Admissions AI Assistant (Miku AI — RAG Pipeline)
 
+[![Render Deployment](https://img.shields.io/badge/Render-Live%20Production-46E3B7?logo=render&logoColor=white)](https://miku-ai-admissions-assistant.onrender.com)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![Vector Store](https://img.shields.io/badge/ChromaDB-Persistent-orange.svg)](https://www.trychroma.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An intelligent, production-grade AI Admissions Assistant for a Technological University built with **FastAPI**, **ChromaDB**, and **OpenAI/LLM orchestration**. Designed to handle repetitive applicant inquiries regarding degree programs, tuition fees, financial aid, application deadlines, and industry certifications grounded strictly in business documents.
+An intelligent, production-grade AI Admissions Assistant for a Technological University built with **FastAPI**, **ChromaDB**, and **Google Gemini / OpenAI orchestration**. Designed to handle repetitive applicant inquiries regarding degree programs, tuition fees, financial aid, application deadlines, and industry certifications grounded strictly in business documents.
+
+🌐 **Live Production URL:** [https://miku-ai-admissions-assistant.onrender.com](https://miku-ai-admissions-assistant.onrender.com)  
+📖 **Interactive API Documentation:** [https://miku-ai-admissions-assistant.onrender.com/docs](https://miku-ai-admissions-assistant.onrender.com/docs)
 
 ---
 
@@ -269,6 +273,40 @@ The project includes an exportable n8n workflow file (`n8n_workflow.json`):
    - **Telegram Trigger / Webhook Trigger** $\rightarrow$ Captures student message.
    - **HTTP Request** $\rightarrow$ Dispatches query to `POST http://localhost:8000/api/chat`.
    - **IF Node (`Is Escalated?`)** $\rightarrow$ Routes normal answers to the user and triggers an automated alert with `Ticket ID` to the Human Admissions team when escalation is needed.
+
+---
+
+## Cloud Deployment on Render
+
+The application is deployed and publicly accessible in production on **Render**:
+
+🔗 **Production Web Application:** [https://miku-ai-admissions-assistant.onrender.com](https://miku-ai-admissions-assistant.onrender.com)  
+📖 **Interactive Swagger Docs:** [https://miku-ai-admissions-assistant.onrender.com/docs](https://miku-ai-admissions-assistant.onrender.com/docs)  
+⚡ **Real-Time Streaming Endpoint:** `POST https://miku-ai-admissions-assistant.onrender.com/api/chat/stream`  
+📊 **Live Telemetry & Metrics:** `GET https://miku-ai-admissions-assistant.onrender.com/api/metrics`
+
+### Deploying Your Own Instance on Render
+
+The repository includes a ready-to-use **Render Blueprint** (`render.yaml`) and runtime definition (`runtime.txt`):
+
+#### Method 1: Zero-Config Render Blueprint (Recommended)
+1. Go to [Render Dashboard](https://dashboard.render.com/) and click **New +** > **Blueprint**.
+2. Connect your GitHub account and select repository: `Diego-capu/pruebaDesempe-o_AI`.
+3. Enter your `OPENAI_API_KEY` (Google AI Studio or OpenAI key).
+4. Click **Apply**. Render will automatically build the environment, launch Uvicorn, and initialize ChromaDB vector storage on startup.
+
+#### Method 2: Manual Web Service Setup
+- **Environment:** Python 3 (`3.11.9`)
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- **Environment Variables:**
+  - `OPENAI_API_KEY`: `<YOUR_API_KEY>`
+  - `OPENAI_BASE_URL`: `https://generativelanguage.googleapis.com/v1beta/openai/`
+  - `LLM_MODEL`: `gemini-3.5-flash-lite`
+  - `EMBEDDING_MODEL`: `gemini-embedding-001`
+  - `SIMILARITY_THRESHOLD`: `0.55`
+  - `MAX_RETRIEVED_CHUNKS`: `3`
+  - `TOKEN_LIMIT_MONTHLY`: `1000000`
 
 ---
 
