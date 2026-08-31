@@ -1,0 +1,46 @@
+===================================================================
+TECHNOLOGICAL UNIVERSITY OF ADVANCED SCIENCE & ENGINEERING (TECHUNI)
+DOCUMENT 03: ADMISSIONS PROCESS, CERTIFICATIONS, AND ACCREDITATION
+===================================================================
+
+1. ADMISSIONS REQUIREMENTS & APPLICATION PROCESS
+
+A. Undergraduate Admissions (B.Sc. Programs)
+- High School Diploma / Upper Secondary Certificate (official translated transcript).
+- Mathematics Proficiency: Passing score in High School Calculus or Algebra, or completion of TechUni Math Prep Module.
+- Valid Government ID or Passport copy.
+- Online Application Form submitted through admissions portal.
+
+B. Master of Science Admissions (M.Sc. Programs)
+- Bachelor's Degree in Computer Science, Engineering, Mathematics, or closely related technical field.
+- Minimum undergraduate cumulative GPA of 3.0/4.0.
+- Updated Curriculum Vitae (CV) and 1-page Statement of Purpose (SOP).
+- Technical interview with Program Director.
+
+C. Application Deadlines
+- Fall Semester Admission: Early Action Deadline is May 15; Regular Deadline is August 1.
+- Spring Semester Admission: Early Action Deadline is October 15; Regular Deadline is January 10.
+- Late applications are processed on a rolling space-available basis.
+
+2. INDUSTRY CERTIFICATIONS INCLUDED IN CURRICULUM
+TechUni integrates official vendor certification pathways into regular course work at no additional cost:
+
+A. AWS Academy Accredited Curriculum
+- Students in AI & Data Engineering and CyberCloud programs prepare for AWS Certified Solutions Architect (Associate) and AWS Certified Machine Learning (Specialty) exams.
+- TechUni provides 50% to 100% exam voucher discount codes.
+
+B. Cisco Networking & Security Certification
+- Coursework aligned with Cisco CCNA and CyberOps Associate certifications.
+
+C. Google Cloud & NVIDIA Deep Learning Institute
+- Hands-on certificates embedded in M.Sc. and Bootcamp modules.
+
+3. ACCREDITATION & DEGREE VALIDATION
+- Institutional Accreditation: Fully accredited by the National Higher Education Quality Assurance Council (NHEQAC) and international engineering recognition standards.
+- Credit Transfer: Up to 60 credit hours transferred from accredited post-secondary institutions, subject to syllabus review by the Academic Credit Committee.
+- International Apostille & Transcript Validation: TechUni issues official English transcripts, diploma supplements, and European Credit Transfer System (ECTS) equivalency documents for graduates seeking international employment or further postgraduate study.
+
+4. ADMISSIONS OFFICE CONTACT & HUMAN ESCALATION
+- Email: admissions@techuni.edu
+- Direct Phone / WhatsApp Escalation: +1 (800) 555-TECH (8324)
+- Hours of Operation: Monday to Friday, 09:00 AM - 05:00 PM (EST).
