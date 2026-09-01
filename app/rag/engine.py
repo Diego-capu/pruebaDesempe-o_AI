@@ -122,10 +122,10 @@ class RAGEngine:
         cert_terms = ["cert", "certification", "certifications", "cisco", "aws", "ccna", "cyberops", "google cloud", "nvidia", "vendor", "certificación", "certificaciones"]
         modality_terms = ["modality", "modalities", "online", "hybrid", "campus", "presential", "schedule", "shift", "weekend", "morning", "evening", "modalidad", "modalidades", "horario", "horarios", "turno", "turnos", "presencial"]
         program_terms = ["program", "programs", "degree", "degrees", "career", "careers", "offer", "offerings", "bootcamp", "bootcamps", "course", "courses", "available", "carrera", "carreras", "programa", "programas"]
-        tuition_terms = ["tuition", "fee", "fees", "cost", "costs", "price", "prices", "scholarship", "scholarships", "grant", "payment", "installment", "refund", "financial aid", "stem", "beca", "becas", "matrícula", "matricula", "costo", "costos", "precio", "precios", "cuota", "cuotas"]
+        tuition_terms = ["tuition", "fee", "fees", "cost", "costs", "price", "prices", "scholarship", "scholarships", "grant", "payment", "installment", "refund", "financial aid", "stem", "crypto", "cryptocurrency", "bitcoin", "paypal", "criptomoneda", "criptomonedas", "beca", "becas", "matrícula", "matricula", "costo", "costos", "precio", "precios", "cuota", "cuotas"]
         admission_terms = ["sign up", "apply", "enroll", "register", "join", "admission", "admissions", "requirements", "deadline", "requisito", "requisitos", "inscrib", "postul", "matricul"]
         
-        if len(clean_q.split()) <= 6:
+        if len(clean_q.split()) <= 8:
             if any(term in lower_q for term in cert_terms):
                 if any(w in lower_q for w in ["certificación", "certificaciones"]):
                     normalized_query = f"{clean_q} certificaciones oficiales industria AWS Academy Cisco CCNA CyberOps Google Cloud NVIDIA plan de estudios"
@@ -137,7 +137,9 @@ class RAGEngine:
                 else:
                     normalized_query = f"{clean_q} study modalities on-campus hybrid 100% online asynchronous synchronous lectures"
             elif any(term in lower_q for term in tuition_terms):
-                if any(w in lower_q for w in ["matrícula", "matricula", "costo", "precio", "cuota", "beca"]):
+                if any(w in lower_q for w in ["crypto", "cryptocurrency", "bitcoin", "paypal", "cripto", "criptomoneda", "criptomonedas"]):
+                    normalized_query = f"{clean_q} payment methods flexibility installment plans 3-pay 5-pay early payment discount corporate sponsorship"
+                elif any(w in lower_q for w in ["matrícula", "matricula", "costo", "precio", "cuota", "beca"]):
                     normalized_query = f"{clean_q} costos matrícula aranceles becas ayuda financiera pagos"
                 else:
                     normalized_query = f"{clean_q} tuition fees payment installment scholarships financial aid grants"
@@ -668,6 +670,26 @@ class RAGEngine:
                     "- **Cisco Certifications:** Coursework aligned with Cisco CCNA and CyberOps Associate.\n"
                     "- **Google Cloud & NVIDIA Deep Learning Institute:** Hands-on certificates embedded in Master's and Bootcamp modules.\n\n"
                     "Would you like more details on how to qualify for certification vouchers?"
+                )
+
+        # Unlisted / Cryptocurrency Payment Methods (Direct clarification + available payment options, No Escalation)
+        elif (
+            bool(query_tokens & {"crypto", "cryptocurrency", "bitcoin", "btc", "eth", "ethereum", "paypal", "cripto", "criptomoneda", "criptomonedas"}) or
+            "cryptocurrency" in query_lower or "crypto" in query_lower or "bitcoin" in query_lower or "criptomoneda" in query_lower or "paypal" in query_lower
+        ):
+            if is_spanish:
+                answer = (
+                    "TechUni no acepta criptomonedas ni métodos de pago digitales no oficiales. Sin embargo, ofrecemos varias opciones flexibles de financiamiento y pago:\n"
+                    "- **Descuento por Pago Anticipado:** 8% de descuento sobre la matrícula anual total si se cancela al menos 30 días antes del inicio del semestre.\n"
+                    "- **Planes en Cuotas Mensuales (3 y 5 Cuotas):** Planes sin intereses donde la matrícula semestral se divide en cuotas mensuales iguales (el plan de 5 cuotas requiere 20% de cuota inicial y $25 USD de tarifa administrativa semestral).\n"
+                    "- **Patrocinio Corporativo:** Facturación directa a empresas autorizadas con pago diferido hasta 30 días post-término."
+                )
+            else:
+                answer = (
+                    "TechUni does not accept cryptocurrency as a payment method. However, we offer several flexible payment and financing options:\n"
+                    "- **Single Early Payment Discount:** An 8% discount on total annual tuition if paid in full at least 30 days prior to the semester start.\n"
+                    "- **Monthly Installment Plans (3-Pay & 5-Pay):** Interest-free plans where semester tuition is split into equal monthly payments (the 5-Pay plan requires a 20% down payment plus a $25 USD setup fee per semester).\n"
+                    "- **Corporate Sponsorship & Employer Billing:** Direct invoicing to approved corporate employers with deferred payment extended up to 30 days post-term."
                 )
 
         elif is_msc_tuition:

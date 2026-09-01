@@ -102,6 +102,20 @@ def test_cisco_and_aws_certifications_no_escalation(engine):
     assert "aws" in answer or "amazon" in answer, "Response must mention AWS Academy."
     assert "cisco" in answer or "ccna" in answer, "Response must mention Cisco certifications."
 
+def test_cryptocurrency_payment_method_no_escalation(engine):
+    """
+    Test 9: 'Do you accept cryptocurrency as a payment method?' -> No escalation, direct refusal + lists available payment options.
+    """
+    query = "Do you accept cryptocurrency as a payment method?"
+    res = engine.process_query(query)
+    
+    assert res["escalated"] is False, "Cryptocurrency payment inquiry must NOT be escalated."
+    assert res["escalation_details"] is None, "No escalation ticket should be generated."
+    answer = res["answer"].lower()
+    assert "not accept" in answer or "no acepta" in answer or "cryptocurrency" in answer, "Response must state crypto is not accepted."
+    assert "discount" in answer or "installment" in answer or "cuotas" in answer or "corporate" in answer or "patrocinio" in answer, "Response must outline official available payment options."
+
+
 
 
 
