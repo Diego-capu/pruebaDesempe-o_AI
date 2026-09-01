@@ -219,28 +219,12 @@
             </div>
         </header>
 
-        <!-- Main Layout Container (Centered max-w-3xl by default with top spacing for floating navbar) -->
-        <main id="mainContainer" class="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 pt-16 transition-all duration-500">
+        <!-- Main Layout Container (Centered max-w-4xl with top spacing pt-20 for floating navbar) -->
+        <main id="mainContainer" class="relative z-10 w-full max-w-4xl mx-auto flex-1 flex flex-col justify-center items-center px-4 pt-20 pb-6 transition-all duration-500">
 
-            <!-- Chat Section with Dynamic Transparency & Centered Focus -->
-            <section id="chatSection" class="translucent-glass flex flex-col h-[calc(100vh-6.5rem)] min-h-[600px] border rounded-2xl overflow-hidden group">
+            <!-- Chat Section with Clean Message Stream (No Duplicate Header) -->
+            <section id="chatSection" class="w-full h-[760px] max-h-[85vh] rounded-3xl bg-slate-950/60 backdrop-blur-2xl border border-slate-800/80 shadow-2xl flex flex-col overflow-hidden transition-all duration-300">
                 
-                <!-- Agent Chat Header -->
-                <div class="px-5 py-3.5 border-b border-neutral-800/40 group-hover:border-neutral-800/80 group-focus-within:border-neutral-800/80 bg-neutral-900/30 group-hover:bg-neutral-900/70 group-focus-within:bg-neutral-900/70 backdrop-blur-md flex items-center justify-between transition-all duration-300">
-                    <div class="flex items-center gap-2.5">
-                        <img src="/static/miku.gif" alt="Miku" class="w-6 h-6 rounded-md object-cover border border-teal-500/40 shadow-sm" />
-                        <span class="text-xs font-semibold text-neutral-200 tracking-wide uppercase">Miku AI Assistant</span>
-                    </div>
-                    
-                    <div class="flex items-center gap-3">
-                        <span class="text-[11px] font-mono text-teal-400">Gemini / GPT-4o</span>
-                        <button onclick="toggleTelemetry()" class="text-xs text-teal-400/90 hover:text-teal-300 transition-colors flex items-center gap-1 font-medium cursor-pointer" title="Toggle telemetry metrics and context inspector">
-                            <i data-lucide="activity" class="w-3.5 h-3.5"></i>
-                            <span class="hidden sm:inline">Metrics</span>
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Messages Stream Area -->
                 <div class="flex-1 overflow-y-auto p-5 space-y-4" id="chatMessages">
                     
@@ -458,7 +442,7 @@
 
             if (isSidebarOpen) {
                 sidebar.classList.remove('hidden');
-                mainContainer.classList.remove('max-w-3xl');
+                mainContainer.classList.remove('max-w-4xl');
                 mainContainer.classList.add('max-w-7xl', 'grid', 'grid-cols-1', 'lg:grid-cols-12', 'gap-5');
                 chatSection.classList.remove('lg:col-span-12');
                 chatSection.classList.add('lg:col-span-8');
@@ -470,7 +454,7 @@
             } else {
                 sidebar.classList.add('hidden');
                 mainContainer.classList.remove('max-w-7xl', 'grid', 'grid-cols-1', 'lg:grid-cols-12', 'gap-5');
-                mainContainer.classList.add('max-w-3xl');
+                mainContainer.classList.add('max-w-4xl');
                 chatSection.classList.remove('lg:col-span-8');
                 if (toggleBtnText) toggleBtnText.innerText = 'Show Telemetry';
                 if (toggleBtn) {
