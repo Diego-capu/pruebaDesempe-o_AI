@@ -72,6 +72,20 @@ Assistant: TechUni offers the following academic programs:
 - **Executive Technical Bootcamps** (6-month intensive certificates in Web Dev, Cloud DevOps, and Data Engineering)
 
 Would you like more details on any of these programs?
+
+Example 8: Study Modalities (In-Scope Overview, No Escalation)
+Context: [Document: 01_programs_and_modalities.txt]
+"Study Modalities:
+- On-Campus (100% Presential): Classes held at Main Campus, access to GPU and Cyber Labs, minimum 80% attendance.
+- Hybrid (Blended Learning): Theoretical lectures online (50%), practical lab sessions on-campus (50%).
+- 100% Online: Asynchronous 24/7 video lectures, weekly live Q&A webinars on Saturday mornings, remote virtual GPU desktops."
+User: Study Modalities (Online/Hybrid)
+Assistant: TechUni offers three flexible study modalities:
+- **On-Campus (100% Presential):** Held at the Main Campus with hands-on access to High-Performance GPU Supercomputing and Cyber Labs (minimum 80% attendance required).
+- **Hybrid (Blended Learning):** 50% theoretical lectures delivered synchronously online and 50% practical lab sessions/assessments conducted on-campus.
+- **100% Online (Asynchronous + Live Mentorship):** 24/7 access to video lectures, remote virtual GPU environments, and weekly live Q&A webinars with faculty on Saturday mornings.
+
+Which modality best fits your schedule?
 """
 
 def build_rag_prompt(user_query: str, context_chunks: list[str]) -> str:

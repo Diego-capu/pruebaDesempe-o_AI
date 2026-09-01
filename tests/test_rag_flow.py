@@ -75,4 +75,19 @@ def test_academic_programs_available_no_escalation(engine):
     answer = res["answer"].lower()
     assert "artificial intelligence" in answer or "cybersecurity" in answer or "software architecture" in answer, "Response should list degree programs."
 
+def test_study_modalities_online_hybrid_no_escalation(engine):
+    """
+    Test 7: 'Study Modalities (Online/Hybrid)' -> In-Scope Overview, No Escalation, lists all 3 study modalities.
+    """
+    query = "Study Modalities (Online/Hybrid)"
+    res = engine.process_query(query)
+    
+    assert res["escalated"] is False, "'Study Modalities (Online/Hybrid)' must NOT be escalated."
+    assert res["escalation_details"] is None, "No escalation ticket should be generated for modalities."
+    answer = res["answer"].lower()
+    assert "on-campus" in answer or "presential" in answer or "presencial" in answer, "Response must mention on-campus modality."
+    assert "hybrid" in answer or "híbrida" in answer or "hibrida" in answer, "Response must mention hybrid modality."
+    assert "online" in answer or "asynchronous" in answer, "Response must mention online modality."
+
+
 

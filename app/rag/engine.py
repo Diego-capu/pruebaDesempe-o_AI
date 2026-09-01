@@ -110,31 +110,41 @@ class RAGEngine:
 
     def retrieve_context(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
         """
-        Retrieves top_k context chunks with query expansion for short queries (<= 4 words).
+        Retrieves top_k context chunks with query expansion for short queries (<= 6 words)
+        and cleans punctuation/symbols that interfere with embedding matching.
         """
-        normalized_query = query.strip()
-        lower_q = normalized_query.lower()
+        # Clean symbols that interfere with vector search
+        clean_q = re.sub(r"[()/,]", " ", query).strip()
+        lower_q = clean_q.lower()
+        normalized_query = clean_q
         
+        # Keyword categories
+        modality_terms = ["modality", "modalities", "online", "hybrid", "campus", "presential", "schedule", "shift", "weekend", "morning", "evening", "modalidad", "modalidades", "horario", "horarios", "turno", "turnos", "presencial"]
         program_terms = ["program", "programs", "degree", "degrees", "career", "careers", "offer", "offerings", "bootcamp", "bootcamps", "course", "courses", "available", "carrera", "carreras", "programa", "programas"]
-        admission_terms = ["sign up", "apply", "enroll", "register", "join", "admission", "admissions", "inscrib", "postul", "matricul"]
+        admission_terms = ["sign up", "apply", "enroll", "register", "join", "admission", "admissions", "requirements", "requisito", "requisitos", "inscrib", "postul", "matricul"]
         tuition_terms = ["tuition", "cost", "costs", "fee", "fees", "price", "prices", "scholarship", "scholarships", "beca", "becas", "matrícula", "matricula", "costo", "costos", "precio", "precios", "cuota", "cuotas"]
         
-        if len(normalized_query.split()) <= 4:
-            if any(term in lower_q for term in program_terms):
+        if len(clean_q.split()) <= 6:
+            if any(term in lower_q for term in modality_terms):
+                if any(w in lower_q for w in ["modalidad", "modalidades", "horario", "horarios", "turno", "presencial"]):
+                    normalized_query = f"{clean_q} modalidades de estudio presencial híbrido 100% online clases turnos horarios"
+                else:
+                    normalized_query = f"{clean_q} study modalities on-campus hybrid 100% online asynchronous synchronous lectures"
+            elif any(term in lower_q for term in program_terms):
                 if any(w in lower_q for w in ["carrera", "carreras", "programa", "programas"]):
-                    normalized_query = f"{normalized_query} programas académicos carreras pregrado maestrías bootcamps modalidades de estudio"
+                    normalized_query = f"{clean_q} programas académicos carreras pregrado maestrías bootcamps modalidades de estudio"
                 else:
-                    normalized_query = f"{normalized_query} academic programs degrees bachelor master bootcamps study modalities"
+                    normalized_query = f"{clean_q} academic programs degrees bachelor master bootcamps study modalities"
             elif any(term in lower_q for term in admission_terms):
-                if any(w in lower_q for w in ["inscrib", "postul", "matricul"]):
-                    normalized_query = f"{normalized_query} admisiones requisitos proceso postulación matrícula pregrado maestrías bootcamps"
+                if any(w in lower_q for w in ["inscrib", "postul", "matricul", "requisito"]):
+                    normalized_query = f"{clean_q} admisiones requisitos proceso postulación matrícula pregrado maestrías bootcamps"
                 else:
-                    normalized_query = f"{normalized_query} admissions requirements application process enrollment fees undergraduate masters bootcamps"
+                    normalized_query = f"{clean_q} admissions requirements application process enrollment fees undergraduate masters bootcamps"
             elif any(term in lower_q for term in tuition_terms):
                 if any(w in lower_q for w in ["matrícula", "matricula", "costo", "precio", "cuota", "beca"]):
-                    normalized_query = f"{normalized_query} costos matrícula aranceles becas ayuda financiera pagos"
+                    normalized_query = f"{clean_q} costos matrícula aranceles becas ayuda financiera pagos"
                 else:
-                    normalized_query = f"{normalized_query} tuition fees payment plans scholarships undergraduate master costs"
+                    normalized_query = f"{clean_q} tuition fees payment plans scholarships undergraduate master costs"
 
         return self.vector_store.search_similar(normalized_query, top_k=top_k)
 
@@ -598,6 +608,34 @@ class RAGEngine:
                     "- **Master of Science in Software Architecture & Autonomous Systems** (2 years, 48 credit hours)\n"
                     "- **Executive Technical Bootcamps** (6-month intensive certificates in Web Dev, Cloud DevOps, and Data Engineering)\n\n"
                     "Would you like more details on any of these programs?"
+                )
+
+        # Study Modalities Overview
+        elif (
+            ("modalit" in query_lower) or
+            ("modalidad" in query_lower) or
+            ("hybrid" in query_lower and ("online" in query_lower or "campus" in query_lower or "presential" in query_lower or "study" in query_lower or "class" in query_lower)) or
+            ("online" in query_lower and ("on-campus" in query_lower or "campus" in query_lower or "presential" in query_lower or "study" in query_lower)) or
+            query_lower in [
+                "study modalities (online/hybrid)", "study modalities", "modalities available", 
+                "modalidades de estudio", "modalidades disponibles", "modalidades de estudio (online/híbrido)"
+            ]
+        ):
+            if is_spanish:
+                answer = (
+                    "TechUni ofrece tres modalidades flexibles de estudio:\n"
+                    "- **Presencial (100% Presencial):** En el Campus Principal con acceso práctico a laboratorios de supercómputo GPU y Cyber Labs (asistencia mínima requerida del 80%).\n"
+                    "- **Híbrida (Blended Learning):** 50% de clases teóricas sincrónicas online y 50% de sesiones prácticas y evaluaciones en el campus.\n"
+                    "- **100% Online (Asíncrono + Mentoría en Vivo):** Acceso 24/7 a videoclases, entornos de GPU virtuales remotos y webinars semanales de preguntas y respuestas con profesores los sábados por la mañana.\n\n"
+                    "¿Cuál de estas modalidades se adapta mejor a tu disponibilidad?"
+                )
+            else:
+                answer = (
+                    "TechUni offers three flexible study modalities:\n"
+                    "- **On-Campus (100% Presential):** Held at the Main Campus with hands-on access to High-Performance GPU Supercomputing and Cyber Labs (minimum 80% attendance required).\n"
+                    "- **Hybrid (Blended Learning):** 50% theoretical lectures delivered synchronously online and 50% practical lab sessions/assessments conducted on-campus.\n"
+                    "- **100% Online (Asynchronous + Live Mentorship):** 24/7 access to video lectures, remote virtual GPU environments, and weekly live Q&A webinars with faculty on Saturday mornings.\n\n"
+                    "Which modality best fits your schedule?"
                 )
 
         elif is_msc_tuition:
