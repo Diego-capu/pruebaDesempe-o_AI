@@ -780,7 +780,7 @@ class RAGEngine:
             relevant_lines = [l for l in lines if any(w in l.lower() for w in query_words)]
             
             if is_admissions_query and relevant_lines:
-                answer = "Based on official University business documents:\n\n" + "\n".join(relevant_lines[:4])
+                answer = "\n".join(relevant_lines[:4])
             elif is_admissions_query:
                 if is_spanish:
                     answer = (
