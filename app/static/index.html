@@ -191,46 +191,36 @@
     <!-- Foreground Application Content Layer -->
     <div class="relative z-10 w-full min-h-screen flex flex-col pointer-events-auto">
 
-        <!-- Minimalist Floating Mini-Navbar (z-30) -->
-        <header class="fixed top-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center justify-between w-[calc(100%-2rem)] max-w-6xl px-4 sm:px-6 py-2.5 backdrop-blur-xl bg-slate-950/80 border border-slate-800/80 rounded-2xl shadow-2xl shadow-cyan-950/20 transition-all duration-200 ease-in-out">
-            <!-- Brand Identity: Avatar + Name + Badges -->
-            <div class="flex items-center gap-3">
-                <div class="relative w-9 h-9 rounded-xl overflow-hidden border border-cyan-500/30 bg-slate-900 flex-shrink-0 shadow-md shadow-cyan-500/10">
-                    <img src="/static/miku.gif" alt="Miku AI Avatar" class="w-full h-full object-cover" />
+        <!-- Ultra-compact Floating Pill Navbar (z-30) -->
+        <header class="fixed top-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-3 sm:gap-4 px-3.5 py-1.5 rounded-full backdrop-blur-md bg-[#161b22]/70 border border-slate-700/50 shadow-xl shadow-black/40 w-auto max-w-fit transition-all duration-200">
+            <!-- Brand: Circular Avatar + Name + Mini Badge -->
+            <div class="flex items-center gap-2 pr-1 border-r border-slate-700/60">
+                <div class="w-6 h-6 rounded-full overflow-hidden border border-emerald-500/40 bg-slate-900 flex-shrink-0">
+                    <img src="/static/miku.gif" alt="Miku Avatar" class="w-full h-full object-cover" />
                 </div>
-                <div class="flex flex-col text-left">
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm font-bold tracking-wide text-white leading-tight">
-                            Miku AI
-                        </span>
-                        <span class="text-[10px] px-1.5 py-0.2 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 font-mono font-medium">
-                            RAG v1.0
-                        </span>
-                    </div>
-                    <span class="text-[11px] text-slate-400 font-sans leading-tight hidden sm:inline">
-                        Admissions Assistant &bull; Real-Time SSE Pipeline
-                    </span>
-                </div>
+                <span class="text-xs font-semibold text-slate-200 tracking-wide select-none">
+                    Miku AI
+                </span>
+                <span class="text-[9px] px-1 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 font-mono font-medium leading-none">
+                    v1.0
+                </span>
             </div>
 
-            <!-- Right Controls: Show Telemetry + Online Badge -->
-            <div class="flex items-center gap-3">
-                <!-- Toggle Telemetry Button -->
-                <button type="button" onclick="toggleTelemetry()" id="toggleTelemetryBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer border bg-slate-900/80 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700">
-                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-cyan-400"></i>
-                    <span id="toggleTelemetryText">Show Telemetry</span>
-                </button>
+            <!-- Action: Show Telemetry Pill Button -->
+            <button type="button" onclick="toggleTelemetry()" id="toggleTelemetryBtn" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer border bg-slate-900/60 border-slate-700/60 text-slate-300 hover:text-white hover:border-slate-500">
+                <i data-lucide="layout-dashboard" class="w-3 h-3 text-cyan-400"></i>
+                <span id="toggleTelemetryText">Show Telemetry</span>
+            </button>
 
-                <!-- Live Connection Badge -->
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-medium">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Online</span>
-                </div>
+            <!-- Status: Online Indicator Pill -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-[11px] font-mono font-medium select-none">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Online</span>
             </div>
         </header>
 
         <!-- Main Layout Container (Centered max-w-3xl by default with top spacing for floating navbar) -->
-        <main id="mainContainer" class="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 pt-20 transition-all duration-500">
+        <main id="mainContainer" class="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 pt-16 transition-all duration-500">
 
             <!-- Chat Section with Dynamic Transparency & Centered Focus -->
             <section id="chatSection" class="translucent-glass flex flex-col h-[calc(100vh-6.5rem)] min-h-[600px] border rounded-2xl overflow-hidden group">
@@ -464,6 +454,7 @@
             const chatSection = document.getElementById('chatSection');
             const mainContainer = document.getElementById('mainContainer');
             const toggleBtn = document.getElementById('toggleTelemetryBtn');
+            const toggleBtnText = document.getElementById('toggleTelemetryText');
 
             if (isSidebarOpen) {
                 sidebar.classList.remove('hidden');
@@ -473,7 +464,7 @@
                 chatSection.classList.add('lg:col-span-8');
                 if (toggleBtnText) toggleBtnText.innerText = 'Hide Telemetry';
                 if (toggleBtn) {
-                    toggleBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer border bg-cyan-500/15 border-cyan-500/50 text-cyan-300 shadow-sm shadow-cyan-500/20";
+                    toggleBtn.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer border bg-cyan-500/20 border-cyan-400/60 text-cyan-300 shadow-sm shadow-cyan-500/30";
                 }
                 loadMetrics();
             } else {
@@ -483,7 +474,7 @@
                 chatSection.classList.remove('lg:col-span-8');
                 if (toggleBtnText) toggleBtnText.innerText = 'Show Telemetry';
                 if (toggleBtn) {
-                    toggleBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer border bg-slate-900/80 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700";
+                    toggleBtn.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer border bg-slate-900/60 border-slate-700/60 text-slate-300 hover:text-white hover:border-slate-500";
                 }
             }
             lucide.createIcons();
