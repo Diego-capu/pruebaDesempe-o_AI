@@ -63,3 +63,16 @@ def test_spam_irrelevant_pizza(engine):
     assert res["escalation_details"] is None, "No escalation ticket should be generated for spam."
     assert any(w in res["answer"].lower() for w in ["assist", "admissions", "programs", "university"]), "Must politely delimit role boundaries."
 
+def test_academic_programs_available_no_escalation(engine):
+    """
+    Test 6: 'Academic Programs Available' -> In-Scope Overview, No Escalation, lists degree programs.
+    """
+    query = "Academic Programs Available"
+    res = engine.process_query(query)
+    
+    assert res["escalated"] is False, "'Academic Programs Available' must NOT be escalated."
+    assert res["escalation_details"] is None, "No escalation ticket should be generated."
+    answer = res["answer"].lower()
+    assert "artificial intelligence" in answer or "cybersecurity" in answer or "software architecture" in answer, "Response should list degree programs."
+
+

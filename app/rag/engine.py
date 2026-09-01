@@ -113,20 +113,28 @@ class RAGEngine:
         Retrieves top_k context chunks with query expansion for short queries (<= 4 words).
         """
         normalized_query = query.strip()
+        lower_q = normalized_query.lower()
         
-        # Query expansion for short admission intents (<= 4 words)
+        program_terms = ["program", "programs", "degree", "degrees", "career", "careers", "offer", "offerings", "bootcamp", "bootcamps", "course", "courses", "available", "carrera", "carreras", "programa", "programas"]
+        admission_terms = ["sign up", "apply", "enroll", "register", "join", "admission", "admissions", "inscrib", "postul", "matricul"]
+        tuition_terms = ["tuition", "cost", "costs", "fee", "fees", "price", "prices", "scholarship", "scholarships", "beca", "becas", "matrícula", "matricula", "costo", "costos", "precio", "precios", "cuota", "cuotas"]
+        
         if len(normalized_query.split()) <= 4:
-            lower_q = normalized_query.lower()
-            if any(term in lower_q for term in ["sign up", "apply", "enroll", "register", "join", "inscrib", "postul", "matricul"]):
-                if any(w in lower_q for w in ["inscrib", "postul", "matricul", "carrera", "estudiar"]):
+            if any(term in lower_q for term in program_terms):
+                if any(w in lower_q for w in ["carrera", "carreras", "programa", "programas"]):
+                    normalized_query = f"{normalized_query} programas académicos carreras pregrado maestrías bootcamps modalidades de estudio"
+                else:
+                    normalized_query = f"{normalized_query} academic programs degrees bachelor master bootcamps study modalities"
+            elif any(term in lower_q for term in admission_terms):
+                if any(w in lower_q for w in ["inscrib", "postul", "matricul"]):
                     normalized_query = f"{normalized_query} admisiones requisitos proceso postulación matrícula pregrado maestrías bootcamps"
                 else:
                     normalized_query = f"{normalized_query} admissions requirements application process enrollment fees undergraduate masters bootcamps"
-            elif any(term in lower_q for term in ["tuition", "cost", "fee", "price", "matrícula", "matricula", "costo", "precio"]):
-                if any(w in lower_q for w in ["matrícula", "matricula", "costo", "precio", "cuota"]):
-                    normalized_query = f"{normalized_query} costos matrícula aranceles pregrado maestría semestral pagos"
+            elif any(term in lower_q for term in tuition_terms):
+                if any(w in lower_q for w in ["matrícula", "matricula", "costo", "precio", "cuota", "beca"]):
+                    normalized_query = f"{normalized_query} costos matrícula aranceles becas ayuda financiera pagos"
                 else:
-                    normalized_query = f"{normalized_query} tuition fees per semester undergraduate master program costs"
+                    normalized_query = f"{normalized_query} tuition fees payment plans scholarships undergraduate master costs"
 
         return self.vector_store.search_similar(normalized_query, top_k=top_k)
 
@@ -522,6 +530,14 @@ class RAGEngine:
             ("cómo" in query_lower and ("inscrib" in query_lower or "postul" in query_lower or "empiez" in query_lower or "comienz" in query_lower))
         )
 
+        # Academic Programs Available Overview
+        is_programs_overview = (
+            ("program" in query_lower and ("availab" in query_lower or "offer" in query_lower or "academ" in query_lower or "list" in query_lower)) or
+            ("degree" in query_lower and ("availab" in query_lower or "offer" in query_lower or "academ" in query_lower or "list" in query_lower)) or
+            bool(query_tokens & {"programs", "degrees", "carreras", "programas", "bootcamps"}) or
+            query_lower in ["academic programs available", "programs available", "available programs", "what programs are offered", "what programs do you offer", "carreras disponibles", "programas disponibles", "qué carreras tienen", "que carreras tienen"]
+        )
+
         # Specific M.Sc. Tuition
         is_msc_tuition = (
             ("m.sc" in query_lower or "msc" in query_lower or "master" in query_lower or "maestria" in query_lower or "maestría" in query_lower) and
@@ -562,6 +578,26 @@ class RAGEngine:
                     "- **Master of Science (M.Sc.)**: M.Sc. in Software Architecture & Autonomous Systems (2 years / 4 semesters).\n"
                     "- **Executive Technical Bootcamps**: 6-month intensive certificates in Full-Stack Web Development, Cloud DevOps, and Data Analytics.\n\n"
                     "The general admissions process begins by completing our online application form with the $75 USD application fee. Which degree track would you like to enroll in so I can provide the exact prerequisites and deadlines?"
+                )
+
+        elif is_programs_overview:
+            if is_spanish:
+                answer = (
+                    "TechUni ofrece los siguientes programas de grado de alta especialización técnica:\n"
+                    "- **Bachelor of Science in AI & Data Engineering** (4 años, 140 créditos)\n"
+                    "- **Bachelor of Science in Cybersecurity & Cloud Systems** (4 años, 138 créditos)\n"
+                    "- **Master of Science in Software Architecture & Autonomous Systems** (2 años, 48 créditos)\n"
+                    "- **Executive Technical Bootcamps** (Certificados intensivos de 6 meses en Web Dev, Cloud DevOps y Data Engineering)\n\n"
+                    "¿Te gustaría recibir más detalles sobre alguno de estos programas?"
+                )
+            else:
+                answer = (
+                    "TechUni offers the following academic programs:\n"
+                    "- **Bachelor of Science in AI & Data Engineering** (4 years, 140 credit hours)\n"
+                    "- **Bachelor of Science in Cybersecurity & Cloud Systems** (4 years, 138 credit hours)\n"
+                    "- **Master of Science in Software Architecture & Autonomous Systems** (2 years, 48 credit hours)\n"
+                    "- **Executive Technical Bootcamps** (6-month intensive certificates in Web Dev, Cloud DevOps, and Data Engineering)\n\n"
+                    "Would you like more details on any of these programs?"
                 )
 
         elif is_msc_tuition:

@@ -60,6 +60,18 @@ Example 6: Irrelevant / Non-Academic Query (Rechazo Educado, No escalation, No t
 Context: No relevant documents found.
 User: pizza
 Assistant: I can only assist with academic and admissions inquiries for Technological University (programs, schedules, tuition fees, scholarships, and enrollment). How can I assist you with your studies today?
+
+Example 7: Academic Programs Available (In-Scope Overview, No Escalation)
+Context: [Document: 01_programs_and_modalities.txt]
+"Academic Offerings & Degrees: Bachelor of Science in AI & Data Engineering, Bachelor of Science in Cybersecurity & Cloud Systems, Master of Science in Software Architecture & Autonomous Systems, Executive Technical Bootcamps."
+User: Academic Programs Available
+Assistant: TechUni offers the following academic programs:
+- **Bachelor of Science in AI & Data Engineering** (4 years, 140 credit hours)
+- **Bachelor of Science in Cybersecurity & Cloud Systems** (4 years, 138 credit hours)
+- **Master of Science in Software Architecture & Autonomous Systems** (2 years, 48 credit hours)
+- **Executive Technical Bootcamps** (6-month intensive certificates in Web Dev, Cloud DevOps, and Data Engineering)
+
+Would you like more details on any of these programs?
 """
 
 def build_rag_prompt(user_query: str, context_chunks: list[str]) -> str:
