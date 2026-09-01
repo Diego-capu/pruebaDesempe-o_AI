@@ -36,6 +36,7 @@ class MetricsService:
         self.total_escalations = 0
         self.total_pre_llm_escalations = 0
         self.total_post_llm_escalations = 0
+        self.latencies = []
         
         # Monthly token quota limit (default 1,000,000 tokens)
         self.token_limit_monthly = token_limit_monthly or int(os.getenv("TOKEN_LIMIT_MONTHLY", 1_000_000))
@@ -57,6 +58,11 @@ class MetricsService:
 
         return round(query_cost, 6)
 
+    def record_latency(self, latency_ms: float):
+        self.latencies.append(latency_ms)
+        if len(self.latencies) > 1000:
+            self.latencies.pop(0)
+
     def record_query(self, escalated: bool = False, pre_llm: bool = False):
         self.total_queries += 1
         if escalated:
@@ -70,6 +76,7 @@ class MetricsService:
         uptime_seconds = int(time.time() - self.start_time)
         escalation_rate = (self.total_escalations / self.total_queries * 100.0) if self.total_queries > 0 else 0.0
         usage_pct = (self.total_tokens / self.token_limit_monthly * 100.0) if self.token_limit_monthly > 0 else 0.0
+        avg_latency = round(sum(self.latencies) / len(self.latencies), 2) if self.latencies else 0.0
 
         metrics = {
             "total_queries_processed": self.total_queries,
@@ -78,6 +85,7 @@ class MetricsService:
             "completion_tokens": self.completion_tokens,
             "token_limit_monthly": self.token_limit_monthly,
             "token_usage_percentage": round(usage_pct, 4),
+            "average_latency_ms": avg_latency,
             "escalation_metrics": {
                 "total_escalations": self.total_escalations,
                 "escalation_rate_pct": round(escalation_rate, 2),

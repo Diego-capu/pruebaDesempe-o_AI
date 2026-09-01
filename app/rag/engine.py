@@ -93,6 +93,43 @@ class RAGEngine:
         }
         return cleaned in greetings or cleaned.startswith("hello ") or cleaned.startswith("hi ") or cleaned.startswith("hola ")
 
+    @staticmethod
+    def _clean_context_chunk(chunk_text: str) -> str:
+        """Removes repeated character lines, raw document headings, and section number artifacts before prompt construction."""
+        cleaned_lines = []
+        for line in chunk_text.splitlines():
+            line_s = line.strip()
+            # Filter out divider lines
+            if re.match(r'^[=\-_*#]{3,}$', line_s):
+                continue
+            # Filter out raw document title headers like "DOCUMENT 01:", "DOCUMENT 02:"
+            if re.match(r'^DOCUMENT\s+\d+:', line_s, re.IGNORECASE):
+                continue
+            cleaned_lines.append(line)
+        return "\n".join(cleaned_lines).strip()
+
+    def retrieve_context(self, query: str, top_k: int = 4) -> List[Dict[str, Any]]:
+        """
+        Retrieves top_k context chunks with query expansion for short queries (<= 4 words).
+        """
+        normalized_query = query.strip()
+        
+        # Query expansion for short admission intents (<= 4 words)
+        if len(normalized_query.split()) <= 4:
+            lower_q = normalized_query.lower()
+            if any(term in lower_q for term in ["sign up", "apply", "enroll", "register", "join", "inscrib", "postul", "matricul"]):
+                if any(w in lower_q for w in ["inscrib", "postul", "matricul", "carrera", "estudiar"]):
+                    normalized_query = f"{normalized_query} admisiones requisitos proceso postulación matrícula pregrado maestrías bootcamps"
+                else:
+                    normalized_query = f"{normalized_query} admissions requirements application process enrollment fees undergraduate masters bootcamps"
+            elif any(term in lower_q for term in ["tuition", "cost", "fee", "price", "matrícula", "matricula", "costo", "precio"]):
+                if any(w in lower_q for w in ["matrícula", "matricula", "costo", "precio", "cuota"]):
+                    normalized_query = f"{normalized_query} costos matrícula aranceles pregrado maestría semestral pagos"
+                else:
+                    normalized_query = f"{normalized_query} tuition fees per semester undergraduate master program costs"
+
+        return self.vector_store.search_similar(normalized_query, top_k=top_k)
+
     def process_query(self, query: str, session_id: str = "default") -> Dict[str, Any]:
         """
         Executes end-to-end synchronous RAG pipeline for a student query.
@@ -107,6 +144,7 @@ class RAGEngine:
             if "suggested_chips" not in cached_result:
                 cached_result["suggested_chips"] = generate_suggested_chips(query, cached_result.get("answer", ""))
             self.metrics_service.record_query(escalated=cached_result.get("escalated", False))
+            self.metrics_service.record_latency(cached_result["latency_ms"])
             return cached_result
 
         # Step 1b: Greeting Fast-Path (No vector store calls, cordial response, zero tickets)
@@ -120,6 +158,7 @@ class RAGEngine:
             chips = generate_suggested_chips(query, greeting_ans)
             prompt_tokens = len(query.split()) * 2
             completion_tokens = len(greeting_ans.split()) * 2
+            latency_ms = round((time.time() - start_time) * 1000, 2)
             response_payload = {
                 "answer": greeting_ans,
                 "escalated": False,
@@ -134,29 +173,22 @@ class RAGEngine:
                     "total_tokens": prompt_tokens + completion_tokens
                 },
                 "estimated_cost_usd": 0.0,
-                "latency_ms": round((time.time() - start_time) * 1000, 2)
+                "latency_ms": latency_ms
             }
             self.metrics_service.record_query(escalated=False)
+            self.metrics_service.record_latency(latency_ms)
             self.cache_service.set(query, response_payload)
             return response_payload
 
-        # Step 2: Query Expansion / basic HyDE for short inputs (<= 4 words)
-        search_query = query
-        if len(query.split()) <= 4:
-            is_spanish_query = any(w.lower() in ["cuanto", "cuánto", "precio", "costo", "beca", "pago", "horario", "carrera", "programa", "requisito", "hola", "inscripc", "matricula", "matrícula", "quiero", "postular", "como", "cómo"] for w in query.split())
-            if is_spanish_query:
-                search_query = f"{query} admisiones requisitos proceso postulación matrícula programas costos"
-            else:
-                search_query = f"{query} admissions requirements application process enrollment fees degree programs"
-
-        retrieved_chunks = self.vector_store.search_similar(search_query, top_k=4)
+        # Step 2: Semantic Retrieval from ChromaDB with Query Expansion
+        retrieved_chunks = self.retrieve_context(query, top_k=4)
 
         # Step 3: Filter relevant chunks by confidence threshold (allow empty context for LLM evaluation)
         relevant_chunks, max_similarity = self.escalation_service.filter_relevant_chunks(retrieved_chunks)
 
-        # Step 4: Build Context Chunks & User Prompt
+        # Step 4: Build Context Chunks & User Prompt (with cleaned headers)
         context_chunks = [
-            f"[Source: {chunk['source']} | Similarity: {chunk['similarity']:.2f}]\n{chunk['text']}"
+            f"[Source: {chunk['source']} | Similarity: {chunk['similarity']:.2f}]\n{self._clean_context_chunk(chunk['text'])}"
             for chunk in relevant_chunks
         ]
         prompt_text = build_rag_prompt(user_query=query, context_chunks=context_chunks)
@@ -267,23 +299,15 @@ class RAGEngine:
             yield f"data: {json.dumps({'type': 'done', **response_payload})}\n\n"
             return
 
-        # Step 2: Query Expansion / basic HyDE for short inputs (<= 4 words)
-        search_query = query
-        if len(query.split()) <= 4:
-            is_spanish_query = any(w.lower() in ["cuanto", "cuánto", "precio", "costo", "beca", "pago", "horario", "carrera", "programa", "requisito", "hola", "inscripc", "matricula", "matrícula", "quiero", "postular", "como", "cómo"] for w in query.split())
-            if is_spanish_query:
-                search_query = f"{query} admisiones requisitos proceso postulación matrícula programas costos"
-            else:
-                search_query = f"{query} admissions requirements application process enrollment fees degree programs"
-
-        retrieved_chunks = self.vector_store.search_similar(search_query, top_k=4)
+        # Step 2: Semantic Retrieval with Query Expansion
+        retrieved_chunks = self.retrieve_context(query, top_k=4)
 
         # Step 3: Filter relevant chunks
         relevant_chunks, max_similarity = self.escalation_service.filter_relevant_chunks(retrieved_chunks)
 
-        # Step 4: Build Context Chunks & User Prompt
+        # Step 4: Build Context Chunks & User Prompt (with cleaned headers)
         context_chunks = [
-            f"[Source: {chunk['source']} | Similarity: {chunk['similarity']:.2f}]\n{chunk['text']}"
+            f"[Source: {chunk['source']} | Similarity: {chunk['similarity']:.2f}]\n{self._clean_context_chunk(chunk['text'])}"
             for chunk in relevant_chunks
         ]
         prompt_text = build_rag_prompt(user_query=query, context_chunks=context_chunks)
@@ -477,13 +501,15 @@ class RAGEngine:
         
         # Check explicit legitimate out-of-scope queries (missing in documents)
         is_out_of_scope = (
+            "civil engineering" in query_lower or "ingeniería civil" in query_lower or "ingenieria civil" in query_lower or
+            "mechanical engineering" in query_lower or "ingeniería mecánica" in query_lower or
             "aerospace" in query_lower or "aeroespacial" in query_lower or
             ("corporate" in query_lower and "discount" in query_lower) or
             ("descuento" in query_lower and ("grupo" in query_lower or "corporativo" in query_lower or "ingeniero" in query_lower)) or
             ("descuentos" in query_lower and ("grupo" in query_lower or "corporativo" in query_lower or "ingeniero" in query_lower)) or
             "20+" in query_lower or
             ("20" in query_lower and ("ingeniero" in query_lower or "engineer" in query_lower or "grupo" in query_lower)) or
-            bool(query_tokens & {"mandarin", "chinese", "chino", "china", "dormitory", "housing", "dormitorio", "alojamiento", "visa"})
+            bool(query_tokens & {"mandarin", "chinese", "chino", "china", "dormitory", "housing", "dormitorio", "alojamiento", "visa", "medicina", "medicine", "derecho", "law", "nursing", "enfermeria", "enfermería"})
         )
 
         # General Admission Intent (e.g. "I want to sign up", "how to apply", "quiero inscribirme")
