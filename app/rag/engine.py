@@ -114,22 +114,33 @@ class RAGEngine:
         and cleans punctuation/symbols that interfere with embedding matching.
         """
         # Clean symbols that interfere with vector search
-        clean_q = re.sub(r"[()/,]", " ", query).strip()
+        clean_q = re.sub(r"[()/,+&]", " ", query).strip()
         lower_q = clean_q.lower()
         normalized_query = clean_q
         
         # Keyword categories
+        cert_terms = ["cert", "certification", "certifications", "cisco", "aws", "ccna", "cyberops", "google cloud", "nvidia", "vendor", "certificación", "certificaciones"]
         modality_terms = ["modality", "modalities", "online", "hybrid", "campus", "presential", "schedule", "shift", "weekend", "morning", "evening", "modalidad", "modalidades", "horario", "horarios", "turno", "turnos", "presencial"]
         program_terms = ["program", "programs", "degree", "degrees", "career", "careers", "offer", "offerings", "bootcamp", "bootcamps", "course", "courses", "available", "carrera", "carreras", "programa", "programas"]
-        admission_terms = ["sign up", "apply", "enroll", "register", "join", "admission", "admissions", "requirements", "requisito", "requisitos", "inscrib", "postul", "matricul"]
-        tuition_terms = ["tuition", "cost", "costs", "fee", "fees", "price", "prices", "scholarship", "scholarships", "beca", "becas", "matrícula", "matricula", "costo", "costos", "precio", "precios", "cuota", "cuotas"]
+        tuition_terms = ["tuition", "fee", "fees", "cost", "costs", "price", "prices", "scholarship", "scholarships", "grant", "payment", "installment", "refund", "financial aid", "stem", "beca", "becas", "matrícula", "matricula", "costo", "costos", "precio", "precios", "cuota", "cuotas"]
+        admission_terms = ["sign up", "apply", "enroll", "register", "join", "admission", "admissions", "requirements", "deadline", "requisito", "requisitos", "inscrib", "postul", "matricul"]
         
         if len(clean_q.split()) <= 6:
-            if any(term in lower_q for term in modality_terms):
+            if any(term in lower_q for term in cert_terms):
+                if any(w in lower_q for w in ["certificación", "certificaciones"]):
+                    normalized_query = f"{clean_q} certificaciones oficiales industria AWS Academy Cisco CCNA CyberOps Google Cloud NVIDIA plan de estudios"
+                else:
+                    normalized_query = f"{clean_q} vendor certifications AWS Academy Cisco CCNA CyberOps Google Cloud NVIDIA coursework"
+            elif any(term in lower_q for term in modality_terms):
                 if any(w in lower_q for w in ["modalidad", "modalidades", "horario", "horarios", "turno", "presencial"]):
                     normalized_query = f"{clean_q} modalidades de estudio presencial híbrido 100% online clases turnos horarios"
                 else:
                     normalized_query = f"{clean_q} study modalities on-campus hybrid 100% online asynchronous synchronous lectures"
+            elif any(term in lower_q for term in tuition_terms):
+                if any(w in lower_q for w in ["matrícula", "matricula", "costo", "precio", "cuota", "beca"]):
+                    normalized_query = f"{clean_q} costos matrícula aranceles becas ayuda financiera pagos"
+                else:
+                    normalized_query = f"{clean_q} tuition fees payment installment scholarships financial aid grants"
             elif any(term in lower_q for term in program_terms):
                 if any(w in lower_q for w in ["carrera", "carreras", "programa", "programas"]):
                     normalized_query = f"{clean_q} programas académicos carreras pregrado maestrías bootcamps modalidades de estudio"
@@ -139,12 +150,7 @@ class RAGEngine:
                 if any(w in lower_q for w in ["inscrib", "postul", "matricul", "requisito"]):
                     normalized_query = f"{clean_q} admisiones requisitos proceso postulación matrícula pregrado maestrías bootcamps"
                 else:
-                    normalized_query = f"{clean_q} admissions requirements application process enrollment fees undergraduate masters bootcamps"
-            elif any(term in lower_q for term in tuition_terms):
-                if any(w in lower_q for w in ["matrícula", "matricula", "costo", "precio", "cuota", "beca"]):
-                    normalized_query = f"{clean_q} costos matrícula aranceles becas ayuda financiera pagos"
-                else:
-                    normalized_query = f"{clean_q} tuition fees payment plans scholarships undergraduate master costs"
+                    normalized_query = f"{clean_q} admissions requirements application process enrollment fees"
 
         return self.vector_store.search_similar(normalized_query, top_k=top_k)
 
@@ -636,6 +642,32 @@ class RAGEngine:
                     "- **Hybrid (Blended Learning):** 50% theoretical lectures delivered synchronously online and 50% practical lab sessions/assessments conducted on-campus.\n"
                     "- **100% Online (Asynchronous + Live Mentorship):** 24/7 access to video lectures, remote virtual GPU environments, and weekly live Q&A webinars with faculty on Saturday mornings.\n\n"
                     "Which modality best fits your schedule?"
+                )
+
+        # Certifications / Vendor Certifications Overview
+        elif (
+            ("cert" in query_lower or "certificación" in query_lower or "certificaciones" in query_lower) or
+            ("cisco" in query_lower or "aws" in query_lower or "ccna" in query_lower or "cyberops" in query_lower or "nvidia" in query_lower or "vendor" in query_lower) or
+            query_lower in [
+                "cisco & aws certifications", "cisco and aws certifications", "vendor certifications", "what certifications are offered",
+                "what industry certifications are included in the curriculum?", "certificaciones cisco y aws", "certificaciones oficiales"
+            ]
+        ):
+            if is_spanish:
+                answer = (
+                    "TechUni integra rutas de certificación oficial de la industria en su plan de estudios sin costo adicional:\n"
+                    "- **Currículo Acreditado AWS Academy:** Prepara a los estudiantes de IA y CyberCloud para los exámenes AWS Solutions Architect (Associate) y AWS Machine Learning (Specialty), incluyendo vouchers de descuento del 50% al 100%.\n"
+                    "- **Certificaciones Cisco:** Cursos alineados directamente con Cisco CCNA y CyberOps Associate.\n"
+                    "- **Google Cloud & NVIDIA Deep Learning Institute:** Certificados prácticos embebidos en los módulos de Maestría y Bootcamps.\n\n"
+                    "¿Te gustaría conocer más sobre los requisitos para obtener estos vouchers de certificación?"
+                )
+            else:
+                answer = (
+                    "TechUni embeds official industry certification pathways into the coursework at no additional cost:\n"
+                    "- **AWS Academy Accredited Curriculum:** Prepares AI & CyberCloud students for AWS Solutions Architect (Associate) and AWS Machine Learning (Specialty) exams, including 50% to 100% exam discount vouchers.\n"
+                    "- **Cisco Certifications:** Coursework aligned with Cisco CCNA and CyberOps Associate.\n"
+                    "- **Google Cloud & NVIDIA Deep Learning Institute:** Hands-on certificates embedded in Master's and Bootcamp modules.\n\n"
+                    "Would you like more details on how to qualify for certification vouchers?"
                 )
 
         elif is_msc_tuition:

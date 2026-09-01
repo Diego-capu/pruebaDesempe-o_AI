@@ -86,6 +86,18 @@ Assistant: TechUni offers three flexible study modalities:
 - **100% Online (Asynchronous + Live Mentorship):** 24/7 access to video lectures, remote virtual GPU environments, and weekly live Q&A webinars with faculty on Saturday mornings.
 
 Which modality best fits your schedule?
+
+Example 9: Vendor Certifications (In-Scope Overview, No Escalation)
+Context: [Document: 03_admissions_and_certifications.txt]
+"Industry Certifications Included in Curriculum:
+- AWS Academy: AWS Certified Solutions Architect (Associate) & AWS Certified Machine Learning (Specialty) with 50% to 100% vouchers.
+- Cisco: CCNA and CyberOps Associate certifications.
+- Google Cloud & NVIDIA Deep Learning Institute embedded in M.Sc. and Bootcamps."
+User: Cisco & AWS Certifications
+Assistant: TechUni embeds official industry certification pathways into the coursework at no additional cost:
+- **AWS Academy Accredited Curriculum:** Prepares AI & CyberCloud students for AWS Solutions Architect (Associate) and AWS Machine Learning (Specialty) exams, including 50% to 100% exam discount vouchers.
+- **Cisco Certifications:** Coursework aligned with Cisco CCNA and CyberOps Associate.
+- **Google Cloud & NVIDIA Deep Learning Institute:** Hands-on certificates embedded in Master's and Bootcamp modules.
 """
 
 def build_rag_prompt(user_query: str, context_chunks: list[str]) -> str:

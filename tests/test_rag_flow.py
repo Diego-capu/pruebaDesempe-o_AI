@@ -89,5 +89,19 @@ def test_study_modalities_online_hybrid_no_escalation(engine):
     assert "hybrid" in answer or "híbrida" in answer or "hibrida" in answer, "Response must mention hybrid modality."
     assert "online" in answer or "asynchronous" in answer, "Response must mention online modality."
 
+def test_cisco_and_aws_certifications_no_escalation(engine):
+    """
+    Test 8: 'Cisco & AWS Certifications' -> In-Scope Overview, No Escalation, lists AWS and Cisco certification pathways.
+    """
+    query = "Cisco & AWS Certifications"
+    res = engine.process_query(query)
+    
+    assert res["escalated"] is False, "'Cisco & AWS Certifications' must NOT be escalated."
+    assert res["escalation_details"] is None, "No escalation ticket should be generated for certifications."
+    answer = res["answer"].lower()
+    assert "aws" in answer or "amazon" in answer, "Response must mention AWS Academy."
+    assert "cisco" in answer or "ccna" in answer, "Response must mention Cisco certifications."
+
+
 
 
