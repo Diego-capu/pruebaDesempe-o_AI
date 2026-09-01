@@ -1,48 +1,19 @@
-===================================================================
-TECHNOLOGICAL UNIVERSITY OF ADVANCED SCIENCE & ENGINEERING (TECHUNI)
-DOCUMENT 01: ACADEMIC PROGRAMS, DEGREES, AND STUDY MODALITIES
-===================================================================
+TechUni Academic Programs, Degrees, and Study Modalities
 
-1. ACADEMIC OFFERINGS & DEGREES
-TechUni offers specialized degree programs designed for technical and engineering careers:
+1. Academic Offerings and Degrees
+Technological University of Advanced Science & Engineering (TechUni) offers specialized degree programs:
 
-A. Bachelor of Science in Artificial Intelligence & Data Engineering (B.Sc. AI & Data)
-- Duration: 4 years (8 semesters), total 140 credit hours.
-- Core Focus: Machine Learning, Deep Learning, MLOps, Big Data Pipelines, Neural Networks, Computer Vision, and Natural Language Processing.
-- Capstone Project: Applied AI industry project in Year 4.
+- Bachelor of Science in Artificial Intelligence & Data Engineering (B.Sc. AI & Data): Duration of 4 years (8 semesters), total 140 credit hours. Core Focus includes Machine Learning, Deep Learning, MLOps, Big Data Pipelines, Neural Networks, Computer Vision, and Natural Language Processing. Includes an Applied AI industry Capstone project in Year 4.
+- Bachelor of Science in Cybersecurity & Cloud Systems (B.Sc. CyberCloud): Duration of 4 years (8 semesters), total 138 credit hours. Core Focus includes Network Defense, Ethical Hacking, Cloud Infrastructure (AWS/Azure/GCP), DevSecOps, Cryptography, and Zero Trust Architecture.
+- Master of Science in Software Architecture & Autonomous Systems (M.Sc. Software Arch): Duration of 2 years (4 semesters), total 48 credit hours. Core Focus includes Distributed Systems, Microservices, Agentic AI Workflows, System Resilience, and High-Performance Computing. Offers Thesis or Capstone Industry Practicum option.
+- Executive Technical Bootcamps (Certificates): Duration of 6 months (intensive part-time). Covers Full-Stack Web Development with React/FastAPI, Cloud DevOps Engineering, and Data Engineering & Analytics.
 
-B. Bachelor of Science in Cybersecurity & Cloud Systems (B.Sc. CyberCloud)
-- Duration: 4 years (8 semesters), total 138 credit hours.
-- Core Focus: Network Defense, Ethical Hacking, Cloud Infrastructure (AWS/Azure/GCP), DevSecOps, Cryptography, and Zero Trust Architecture.
+2. Study Modalities
+- On-Campus (100% Presential): Classes at Main Campus (Tech Tower, Science Park District). Hands-on access to High-Performance GPU Supercomputing Labs and Hardware Cyber Labs. Minimum 80% attendance required for labs and lectures.
+- Hybrid (Blended Learning): Theoretical lectures delivered synchronously online (50%). Practical lab sessions and exam assessments conducted on-campus (50%).
+- 100% Online (Asynchronous + Live Mentorship): Video lectures accessible 24/7 via TechUni Learning Portal. Weekly live Q&A webinars with professors on Saturday mornings. Remote virtual GPU desktop environments provided for coding and labs.
 
-C. Master of Science in Software Architecture & Autonomous Systems (M.Sc. Software Arch)
-- Duration: 2 years (4 semesters), total 48 credit hours.
-- Core Focus: Distributed Systems, Microservices, Agentic AI Workflows, System Resilience, High-Performance Computing.
-- Thesis or Capstone Industry Practicum option.
-
-D. Executive Technical Bootcamps (Certificates)
-- Duration: 6 months (intensive part-time).
-- Topics: Full-Stack Web Development with React/FastAPI, Cloud DevOps Engineering, Data Engineering & Analytics.
-
-2. STUDY MODALITIES
-TechUni provides three flexible learning modalities to accommodate full-time students and working professionals:
-
-A. On-Campus (100% Presential)
-- Classes held at Main Campus (Tech Tower, Science Park District).
-- Hands-on access to High-Performance GPU Supercomputing Labs and Hardware Cyber Labs.
-- Attendance requirement: Minimum 80% lab and lecture presence.
-
-B. Hybrid (Blended Learning)
-- Theoretical lectures delivered synchronously online (50%).
-- Practical lab sessions and exam assessments conducted on-campus (50%).
-- Designed for local commuting students.
-
-C. 100% Online (Asynchronous + Live Mentorship)
-- Video lectures accessible 24/7 via the TechUni Learning Portal.
-- Weekly live Q&A webinars with professors on Saturday mornings.
-- Remote virtual GPU desktop environments provided for coding and labs.
-
-3. CLASS SCHEDULES & SHIFTS
+3. Class Schedules and Shifts
 - Morning Shift: Monday to Friday, 08:00 AM - 12:30 PM (On-Campus & Hybrid).
 - Evening Shift: Monday to Friday, 06:00 PM - 09:45 PM (Hybrid & Online).
 - Weekend Shift: Saturdays, 08:30 AM - 05:00 PM (Executive Bootcamps & M.Sc. programs).

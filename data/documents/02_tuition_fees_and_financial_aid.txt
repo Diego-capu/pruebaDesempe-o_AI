@@ -1,53 +1,23 @@
-===================================================================
-TECHNOLOGICAL UNIVERSITY OF ADVANCED SCIENCE & ENGINEERING (TECHUNI)
-DOCUMENT 02: TUITION FEES, PAYMENT PLANS, SCHOLARSHIPS & FINANCIAL AID
-===================================================================
+TechUni Tuition Fees, Payment Plans, Scholarships & Financial Aid
 
-1. TUITION & REGISTRATION FEE STRUCTURE (ACADEMIC YEAR 2026-2027)
+1. Tuition and Registration Fee Structure (Academic Year 2026-2027)
+- Admissions Application Fee: $75 USD (non-refundable one-time fee).
+- Enrollment Seat Deposit: $250 USD (one-time deposit credited toward first semester tuition upon confirmation).
+- Undergraduate Programs (B.Sc. AI & Data / B.Sc. CyberCloud): Full-Time Tuition (15-18 credits per semester) is $4,200 USD per semester. Part-Time Tuition (under 12 credits) is $320 USD per credit hour. Annual total for 2 semesters is $8,400 USD.
+- Master of Science Programs (M.Sc. Software Arch): Tuition per semester (12 credits) is $3,600 USD. Total Program Cost across 4 semesters is $14,400 USD.
+- Executive Technical Bootcamps: Total Bootcamp Fee is $1,800 USD flat rate for the full 6-month program.
 
-A. One-Time Application & Registration Fees
-- Admissions Application Fee: $75 USD (non-refundable).
-- Enrollment Seat Deposit: $250 USD (credited toward first semester tuition upon confirmation).
+2. Payment Flexibility and Installment Plans
+- Single Early Payment Discount: 8% discount on total annual tuition if paid in full at least 30 days prior to semester start.
+- Monthly Installment Plans (3-Pay & 5-Pay): Interest-free semester payment split. The 5-Pay Plan requires a 20% down payment at registration, followed by 4 monthly payments on the 5th of each month. Processing fee is $25 USD setup fee per semester.
+- Corporate Sponsorship & Employer Billing: TechUni invoices approved corporate employers directly. Deferred payment extended up to 30 days post-term upon submission of corporate voucher.
 
-B. Undergraduate Programs (B.Sc. AI & Data / B.Sc. CyberCloud)
-- Full-Time Tuition (15-18 credits per semester): $4,200 USD per semester.
-- Part-Time Tuition (under 12 credits): $320 USD per credit hour.
-- Annual Total (2 semesters): $8,400 USD.
+3. Scholarships and Financial Aid Programs
+- Future Tech Innovators Merit Scholarship: Up to 50% tuition reduction for top applicants with a minimum GPA of 3.8/4.0 (or 90/100 equivalent) and high score on TechUni Admissions Logic Assessment.
+- Women in STEM & Tech Leadership Grant: $1,500 USD per year tuition award for female applicants enrolled in AI, Data Engineering, or Cybersecurity programs.
+- Financial Need Assistance Grant: 20% to 35% tuition assistance based on verified household income evaluation.
 
-C. Master of Science Programs (M.Sc. Software Arch)
-- Tuition per semester (12 credits): $3,600 USD.
-- Total Program Cost (4 semesters): $14,400 USD.
-
-D. Executive Technical Bootcamps
-- Total Bootcamp Fee: $1,800 USD (flat rate for the full 6-month program).
-
-2. PAYMENT FLEXIBILITY & INSTALLMENT PLANS
-
-A. Single Early Payment Discount
-- 8% discount on total annual tuition if paid in full at least 30 days prior to semester start.
-
-B. Monthly Installment Plan (3-Pay & 5-Pay)
-- Students can split semester tuition into equal monthly payments without interest.
-- 5-Pay Plan: 20% down payment at registration, followed by 4 monthly payments on the 5th of each month.
-- Processing fee: $25 USD setup fee per semester.
-
-C. Corporate Sponsorship & Employer Billing
-- TechUni invoices approved corporate employers directly. Deferred payment extended up to 30 days post-term upon submission of corporate voucher.
-
-3. SCHOLARSHIPS & FINANCIAL AID PROGRAMS
-
-A. Future Tech Innovators Merit Scholarship
-- Coverage: Up to 50% tuition reduction for top applicants.
-- Eligibility: Minimum GPA of 3.8/4.0 (or 90/100 equivalent) and high score on TechUni Admissions Logic Assessment.
-
-B. Women in STEM & Tech Leadership Grant
-- Coverage: $1,500 USD per year tuition award.
-- Eligibility: Female applicants enrolled in AI, Data Engineering, or Cybersecurity programs.
-
-C. Financial Need Assistance Grant
-- Coverage: 20% to 35% tuition assistance based on verified household income evaluation.
-
-4. CANCELLATION & REFUND POLICY
+4. Cancellation and Refund Policy
 - Cancellation before Day 1 of classes: 100% tuition refund (excluding non-refundable $75 application fee).
 - Withdrawal during Weeks 1-2: 80% tuition refund.
 - Withdrawal during Weeks 3-4: 50% tuition refund.

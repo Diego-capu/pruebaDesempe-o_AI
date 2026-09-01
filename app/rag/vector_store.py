@@ -1,9 +1,8 @@
 import os
 import math
 import logging
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 import chromadb
-from chromadb.config import Settings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -56,16 +55,115 @@ class VectorStoreManager:
     def _local_fallback_embedding(self, text: str, dim: int = 384) -> List[float]:
         """
         Lightweight fallback embedding generator when API key is offline or unavailable.
-        Uses deterministic zlib.crc32 hashing to produce cosine-comparable dense vectors.
+        Uses deterministic zlib.crc32 hashing with bilingual (Spanish-English) concept expansion.
         """
         import zlib
+        
+        SPANISH_TO_ENGLISH_MAP = {
+            "matricula": ["tuition", "registration", "fee", "enrollment"],
+            "matrícula": ["tuition", "registration", "fee", "enrollment"],
+            "costo": ["tuition", "cost", "fee", "price"],
+            "costos": ["tuition", "cost", "fee", "price"],
+            "precio": ["tuition", "cost", "fee", "price"],
+            "precios": ["tuition", "cost", "fee", "price"],
+            "arancel": ["tuition", "fee"],
+            "aranceles": ["tuition", "fee"],
+            "semestre": ["semester", "term", "academic"],
+            "semestres": ["semester", "term", "academic"],
+            "beca": ["scholarship", "grant", "financial", "aid"],
+            "becas": ["scholarship", "grant", "financial", "aid"],
+            "ayuda": ["financial", "aid", "scholarship"],
+            "ayudas": ["financial", "aid", "scholarship"],
+            "economica": ["financial", "economic"],
+            "económica": ["financial", "economic"],
+            "economicas": ["financial", "economic"],
+            "económicas": ["financial", "economic"],
+            "financiera": ["financial", "aid"],
+            "financieras": ["financial", "aid"],
+            "financiamiento": ["installment", "payment", "financial"],
+            "pago": ["payment", "installment", "pay"],
+            "pagos": ["payment", "installment", "pay"],
+            "cuota": ["installment", "payment", "monthly"],
+            "cuotas": ["installment", "payment", "monthly"],
+            "descuento": ["discount", "reduction"],
+            "descuentos": ["discount", "reduction"],
+            "carrera": ["degree", "program", "bachelor", "master"],
+            "carreras": ["degree", "program", "bachelor", "master"],
+            "programa": ["program", "degree", "course"],
+            "programas": ["program", "degree", "course"],
+            "pregrado": ["undergraduate", "bachelor", "bsc"],
+            "licenciatura": ["undergraduate", "bachelor", "bsc"],
+            "licenciaturas": ["undergraduate", "bachelor", "bsc"],
+            "maestria": ["master", "msc", "graduate"],
+            "maestría": ["master", "msc", "graduate"],
+            "maestrias": ["master", "msc", "graduate"],
+            "maestrías": ["master", "msc", "graduate"],
+            "posgrado": ["postgraduate", "master", "msc"],
+            "postgrado": ["postgraduate", "master", "msc"],
+            "bootcamp": ["bootcamp", "certificate"],
+            "bootcamps": ["bootcamp", "certificate"],
+            "modalidad": ["modality", "modalities", "online", "campus", "hybrid"],
+            "modalidades": ["modality", "modalities", "online", "campus", "hybrid"],
+            "estudio": ["study", "academic"],
+            "estudios": ["study", "academic"],
+            "presencial": ["campus", "presential"],
+            "remoto": ["online", "remote"],
+            "virtual": ["online", "virtual"],
+            "horario": ["schedule", "shift", "hours"],
+            "horarios": ["schedule", "shift", "hours"],
+            "turno": ["shift", "schedule"],
+            "turnos": ["shift", "schedule"],
+            "requisito": ["requirement", "requirements", "admission", "transcripts"],
+            "requisitos": ["requirement", "requirements", "admission", "transcripts"],
+            "admision": ["admission", "admissions", "apply", "application"],
+            "admisión": ["admission", "admissions", "apply", "application"],
+            "admisiones": ["admission", "admissions", "apply", "application"],
+            "inscripcion": ["registration", "enrollment", "application"],
+            "inscripción": ["registration", "enrollment", "application"],
+            "inscripciones": ["registration", "enrollment", "application"],
+            "postulacion": ["application", "apply"],
+            "postulación": ["application", "apply"],
+            "postulaciones": ["application", "apply"],
+            "postular": ["apply", "application"],
+            "fecha": ["deadline", "date", "calendar"],
+            "fechas": ["deadline", "date", "calendar"],
+            "limite": ["deadline"],
+            "límite": ["deadline"],
+            "limites": ["deadline"],
+            "límites": ["deadline"],
+            "transferencia": ["transfer", "credit"],
+            "credito": ["credit", "hours"],
+            "crédito": ["credit", "hours"],
+            "creditos": ["credit", "hours"],
+            "créditos": ["credit", "hours"],
+            "certificacion": ["certification", "certifications", "cisco", "aws", "google", "nvidia"],
+            "certificación": ["certification", "certifications", "cisco", "aws", "google", "nvidia"],
+            "certificaciones": ["certification", "certifications", "cisco", "aws", "google", "nvidia"],
+            "inteligencia": ["artificial", "intelligence", "ai", "data"],
+            "artificial": ["artificial", "intelligence", "ai"],
+            "ciberseguridad": ["cybersecurity", "cybercloud", "security", "defense"],
+            "nube": ["cloud", "systems", "aws", "azure"],
+            "software": ["software", "architecture"],
+            "datos": ["data", "engineering", "analytics"],
+            "stem": ["stem", "women", "leadership", "innovators"],
+            "mujeres": ["women", "stem", "female"]
+        }
+
         vec = [0.0] * dim
-        words = text.lower().split()
-        for i, word in enumerate(words):
-            h = zlib.crc32(word.encode("utf-8")) % dim
+        raw_words = text.lower().replace("?", " ").replace("¿", " ").replace("(", " ").replace(")", " ").replace("/", " ").replace(",", " ").split()
+        
+        # Expand tokens
+        all_tokens = []
+        for word in raw_words:
+            all_tokens.append(word)
+            if word in SPANISH_TO_ENGLISH_MAP:
+                all_tokens.extend(SPANISH_TO_ENGLISH_MAP[word])
+
+        for i, token in enumerate(all_tokens):
+            h = zlib.crc32(token.encode("utf-8")) % dim
             vec[h] += 1.0
-            if i < len(words) - 1:
-                bigram = f"{words[i]}_{words[i+1]}"
+            if i < len(all_tokens) - 1:
+                bigram = f"{all_tokens[i]}_{all_tokens[i+1]}"
                 bigram_h = zlib.crc32(bigram.encode("utf-8")) % dim
                 vec[bigram_h] += 0.5
 
@@ -88,12 +186,29 @@ class VectorStoreManager:
         embeddings = [self._get_embedding(c["text"]) for c in chunks]
 
         # Upsert into ChromaDB
-        self.collection.upsert(
-            ids=ids,
-            documents=documents,
-            embeddings=embeddings,
-            metadatas=metadatas
-        )
+        try:
+            self.collection.upsert(
+                ids=ids,
+                documents=documents,
+                embeddings=embeddings,
+                metadatas=metadatas
+            )
+        except Exception as e:
+            if "dimension" in str(e).lower() or "expecting embedding" in str(e).lower():
+                logger.warning(f"Embedding dimension mismatch ({e}). Recreating collection '{self.collection_name}'...")
+                self.client.delete_collection(name=self.collection_name)
+                self.collection = self.client.get_or_create_collection(
+                    name=self.collection_name,
+                    metadata={"hnsw:space": "cosine"}
+                )
+                self.collection.upsert(
+                    ids=ids,
+                    documents=documents,
+                    embeddings=embeddings,
+                    metadatas=metadatas
+                )
+            else:
+                raise e
         logger.info(f"Successfully indexed {len(chunks)} chunks into ChromaDB.")
 
     def search_similar(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
@@ -106,11 +221,17 @@ class VectorStoreManager:
             return []
 
         query_vec = self._get_embedding(query)
-        results = self.collection.query(
-            query_embeddings=[query_vec],
-            n_results=min(top_k, count),
-            include=["documents", "metadatas", "distances"]
-        )
+        try:
+            results = self.collection.query(
+                query_embeddings=[query_vec],
+                n_results=min(top_k, count),
+                include=["documents", "metadatas", "distances"]
+            )
+        except Exception as e:
+            if "dimension" in str(e).lower() or "expecting embedding" in str(e).lower():
+                logger.warning(f"Embedding dimension mismatch on search ({e}). Returning empty results.")
+                return []
+            raise e
 
         retrieved_chunks = []
         if results and results.get("documents") and results["documents"][0]:

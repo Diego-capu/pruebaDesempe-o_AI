@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import Dict, Any, Optional
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -48,11 +48,6 @@ def startup_event():
 class ChatRequest(BaseModel):
     query: str = Field(..., description="Student query or question regarding admissions, fees, or courses.", example="How much is undergraduate tuition?")
     session_id: Optional[str] = Field("default_session", description="Session or user identifier.")
-
-class WebhookRequest(BaseModel):
-    query: Optional[str] = None
-    chat_id: Optional[str] = None
-    message: Optional[Dict[str, Any]] = None
 
 # Root Endpoint: Serves HTML Dashboard / UI
 @app.get("/", response_class=HTMLResponse)
@@ -143,7 +138,7 @@ async def webhook_endpoint(req: Request):
 
 # Endpoint 3: Manual Re-ingestion Trigger
 @app.post("/api/ingest")
-def trigger_ingest(background_tasks: BackgroundTasks):
+def trigger_ingest():
     """
     Triggers re-indexing of documents in data/documents into ChromaDB.
     """
@@ -151,7 +146,7 @@ def trigger_ingest(background_tasks: BackgroundTasks):
         num_chunks = ingest_documents()
         return {
             "status": "success",
-            "message": f"Successfully ingested business documents into ChromaDB.",
+            "message": "Successfully ingested business documents into ChromaDB.",
             "total_chunks": num_chunks,
             "document_count": rag_engine.vector_store.get_document_count()
         }
