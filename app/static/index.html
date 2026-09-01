@@ -122,37 +122,38 @@
 
         /* Dynamic Glassmorphism Transition */
         .translucent-glass {
-            background-color: rgba(9, 9, 11, 0.25);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border-color: rgba(39, 39, 42, 0.4);
-            opacity: 0.88;
+            background-color: rgba(9, 9, 11, 0.20) !important;
+            backdrop-filter: blur(4px) !important;
+            -webkit-backdrop-filter: blur(4px) !important;
+            border-color: rgba(39, 39, 42, 0.35) !important;
+            opacity: 0.85;
             transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .translucent-glass:hover,
         .translucent-glass:focus-within,
         .translucent-glass.is-active {
-            background-color: rgba(9, 9, 11, 0.78);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border-color: rgba(63, 63, 70, 0.85);
+            background-color: rgba(9, 9, 11, 0.85) !important;
+            backdrop-filter: blur(28px) !important;
+            -webkit-backdrop-filter: blur(28px) !important;
+            border-color: rgba(63, 63, 70, 0.85) !important;
             opacity: 1;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(45, 212, 191, 0.08);
         }
 
         .bubble-translucent {
-            background-color: rgba(24, 24, 27, 0.45);
-            backdrop-filter: blur(8px);
-            border-color: rgba(39, 39, 42, 0.4);
+            background-color: rgba(24, 24, 27, 0.35) !important;
+            backdrop-filter: blur(6px) !important;
+            -webkit-backdrop-filter: blur(6px) !important;
+            border-color: rgba(39, 39, 42, 0.35) !important;
             transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .translucent-glass:hover .bubble-translucent,
         .translucent-glass:focus-within .bubble-translucent,
         .translucent-glass.is-active .bubble-translucent {
-            background-color: rgba(24, 24, 27, 0.92);
-            border-color: rgba(39, 39, 42, 0.8);
+            background-color: rgba(24, 24, 27, 0.92) !important;
+            border-color: rgba(39, 39, 42, 0.8) !important;
         }
     </style>
 </head>
@@ -222,8 +223,8 @@
         <!-- Main Layout Container (Centered max-w-4xl with top spacing pt-20 for floating navbar) -->
         <main id="mainContainer" class="relative z-10 w-full max-w-4xl mx-auto flex-1 flex flex-col justify-center items-center px-4 pt-20 pb-6 transition-all duration-500">
 
-            <!-- Chat Section with Clean Message Stream (No Duplicate Header) -->
-            <section id="chatSection" class="w-full h-[760px] max-h-[85vh] rounded-3xl bg-slate-950/60 backdrop-blur-2xl border border-slate-800/80 shadow-2xl flex flex-col overflow-hidden transition-all duration-300">
+            <!-- Chat Section with Dynamic Transparency & Centered Focus -->
+            <section id="chatSection" class="translucent-glass group w-full h-[760px] max-h-[85vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden">
                 
                 <!-- Messages Stream Area -->
                 <div class="flex-1 overflow-y-auto p-5 space-y-4" id="chatMessages">
@@ -464,14 +465,22 @@
             lucide.createIcons();
         }
 
-        // Input activity listener to keep solid state when user is writing
+        // Input activity and focus listener to control solid vs transparent state
         const inputEl = document.getElementById('userInput');
         const chatSection = document.getElementById('chatSection');
         if (inputEl && chatSection) {
+            inputEl.addEventListener('focus', () => {
+                chatSection.classList.add('is-active');
+            });
+            inputEl.addEventListener('blur', () => {
+                if (inputEl.value.trim().length === 0) {
+                    chatSection.classList.remove('is-active');
+                }
+            });
             inputEl.addEventListener('input', () => {
                 if (inputEl.value.trim().length > 0) {
                     chatSection.classList.add('is-active');
-                } else {
+                } else if (document.activeElement !== inputEl) {
                     chatSection.classList.remove('is-active');
                 }
             });
