@@ -4,40 +4,96 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![Vector Store](https://img.shields.io/badge/ChromaDB-Persistent-orange.svg)](https://www.trychroma.com/)
+[![Tests](https://img.shields.io/badge/Tests-17%20Passed%20(100%25)-success.svg)](https://github.com/Diego-capu/pruebaDesempe-o_AI)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An intelligent, production-grade AI Admissions Assistant for a Technological University built with **FastAPI**, **ChromaDB**, and **Google Gemini / OpenAI orchestration**. Designed to handle repetitive applicant inquiries regarding degree programs, tuition fees, financial aid, application deadlines, and industry certifications grounded strictly in business documents.
+An intelligent, production-grade AI Admissions Assistant for Technological University (TechUni) built with **FastAPI**, **ChromaDB**, and **Google Gemini / OpenAI orchestration**. Designed to handle repetitive applicant inquiries regarding degree programs, study modalities, tuition costs, financial aid scholarships, application deadlines, and industry certifications grounded strictly in verified business documents.
 
 🌐 **Live Production URL:** [https://miku-ai-admissions-assistant.onrender.com](https://miku-ai-admissions-assistant.onrender.com)  
-📖 **Interactive API Documentation:** [https://miku-ai-admissions-assistant.onrender.com/docs](https://miku-ai-admissions-assistant.onrender.com/docs)
+📖 **Interactive API Documentation (Swagger UI):** [https://miku-ai-admissions-assistant.onrender.com/docs](https://miku-ai-admissions-assistant.onrender.com/docs)  
+🐙 **GitHub Repository:** [https://github.com/Diego-capu/pruebaDesempe-o_AI](https://github.com/Diego-capu/pruebaDesempe-o_AI)
+
+---
+
+## Architecture & System Overview
+
+```mermaid
+flowchart TD
+    User([Student / Applicant]) -->|Query| Frontend[Web UI / SSE / Telegram]
+    Frontend -->|POST /api/chat or /api/chat/stream| API[FastAPI Controller]
+    
+    API --> Cache{Exact / Semantic Cache?}
+    Cache -->|Hit| InstantResponse[Return Cached Response\n0ms / $0.00]
+    
+    Cache -->|Miss| PreFilter{Greeting Fast-Path?}
+    PreFilter -->|Greeting| DirectGreeting[Cordial Greeting\n0 Context Chunks / No Ticket]
+    
+    PreFilter -->|Inquiry| QueryCleaner[Regex Symbol Cleaner\nStrip () / , + &]
+    QueryCleaner --> Expander[Domain Query Expander\n<= 8 Words Expansion]
+    Expander --> Chroma[(ChromaDB Vector Store\n28 Chunks / Cosine Distance)]
+    
+    Chroma --> ContextCleaner[Context Chunk Sanitizer\nStrip === Dividers & Raw Headers]
+    ContextCleaner --> PromptBuilder[Grounded Prompt Builder\n10 Few-Shot Examples]
+    
+    PromptBuilder --> LLM[LLM Engine\nGemini / GPT-4o]
+    LLM --> PostFilter{Post-LLM Evaluator\nTag Detection}
+    
+    PostFilter -->|ESCALATE_TO_HUMAN| TicketGen[Escalation Ticket Generated\nTICK-XXXXXX]
+    PostFilter -->|Grounded Answer| AnswerGen[Synthesized Response\nNo Robotic Headers]
+    
+    TicketGen --> Telemetry[Metrics & Telemetry Service\nToken Usage & USD Cost]
+    AnswerGen --> Telemetry
+    Telemetry --> ResponseStream[Server-Sent Events / JSON Payload]
+    ResponseStream --> Frontend
+```
 
 ---
 
 ## Key Features
 
-1. **Grounded Business RAG Architecture**:
-   - Custom chunking algorithm with configurable size (500 chars) and overlap (100 chars).
-   - ChromaDB persistent vector database with cosine similarity search.
-   - Grounded strictly in 3+ business documents with strict anti-hallucination controls.
+### 1. Grounded Business RAG Architecture
+- **Persistent Vector Store:** ChromaDB persistent storage initialized with 28 indexed document chunks from official university documents (`01_programs_and_modalities.txt`, `02_tuition_fees_and_financial_aid.txt`, `03_admissions_and_certifications.txt`).
+- **Domain-Aware Query Expansion:** Automatically expands short inquiries ($\le 8$ words) across 6 critical domains:
+  - **Certifications:** Expands with AWS Academy, Cisco CCNA, CyberOps, Google Cloud, NVIDIA DLI.
+  - **Study Modalities:** Expands with On-Campus, Hybrid, 100% Online, asynchronous lectures.
+  - **Academic Programs:** Expands with B.Sc. AI & Data, B.Sc. CyberCloud, M.Sc. Software Architecture, Bootcamps.
+  - **Tuition & Aid:** Expands with semester fees, STEM scholarships, payment installments.
+  - **Admissions:** Expands with application requirements, $75 fee, transcripts, deadlines.
+  - **Payment Methods:** Expands queries regarding unlisted payment methods (cryptocurrency, PayPal) to retrieve official financing options.
+- **Punctuation & Noise Sanitization:** Regex cleaning (`re.sub(r"[()/,+&]", " ", query)`) removes characters that degrade dense vector distance metrics.
+- **Context Leaking Prevention:** Eliminates divider lines (`===`) and raw headers (`DOCUMENT 01:`, `1. ADMISSIONS REQUIREMENTS`) before LLM prompt injection.
+- **Direct, Natural Synthesis:** Zero repetitive or robotic boilerplate prefixes (e.g. removed *"Based on official University business documents:"*).
 
-2. **Double-Filter Human Escalation Engine**:
-   - **Filter 1 (Context Evaluation)**: Filters vector chunks based on cosine similarity threshold before LLM synthesis.
-   - **Filter 2 (Post-LLM System Prompt Tag)**: Detects explicit `[ESCALATE_TO_HUMAN]` prefix tags when questions require human advisor assistance, while politely rejecting non-academic spam without ticket creation.
-   - Generates structured ticket objects (`TICK-XXXXXX`) for human admissions counselors.
+### 2. Double-Filter Human Escalation Engine
+- **Pre-LLM Filtering:**
+  - **Greeting Fast-Path:** Bilingual greetings (e.g. *"Hello!"*, *"Hola, buenos días"*) bypass vector search completely, returning warm, cordial welcomes with 0 chunks and no ticket generation.
+  - **Spam / Trivia Boundary Enforcement:** Irrelevant non-educational queries (e.g. *"pizza"*, recipes, jokes) are politely delimited to admissions assistance without generating escalation tickets.
+- **Post-LLM System Tag Detection (`[ESCALATE_TO_HUMAN]`):**
+  - Legitimate academic queries outside standard documents (e.g. *"Civil Engineering"*, *"Aerospace Engineering"*, *"corporate discounts for 20+ engineers"*) trigger the `[ESCALATE_TO_HUMAN]` tag and create a structured tracking ticket (`TICK-XXXXXX`).
+  - **Unlisted Payment Methods Protection:** Explicitly prevents escalation for unlisted payment methods (such as cryptocurrency or PayPal). The bot politely clarifies that the requested method is not accepted and outlines official available payment options (Early Payment Discount 8%, 3-Pay / 5-Pay Installments, Corporate Sponsorship).
 
-3. **Usage & Cost Telemetry (`response.usage`)**:
-   - Dynamically tracks token consumption (`prompt_tokens`, `completion_tokens`, `total_tokens`) extracted directly from the LLM API `response.usage` object.
-   - Calculates monetary costs in USD ($) and monthly token quota progress (%) in real-time.
+### 3. Usage & Cost Telemetry Service (`response.usage`)
+- Tracks exact token consumption (`prompt_tokens`, `completion_tokens`, `total_tokens`) directly from the LLM API `response.usage` object.
+- Computes real-time estimated financial costs in USD ($) and monthly token quota consumption against a configurable limit (default: 1,000,000 tokens).
+- Exposes complete metrics via `GET /api/metrics`.
 
-4. **Response Caching**:
-   - Built-in normalized semantic/exact memory cache (`CacheService`) to return zero-cost, instant responses for frequent applicant questions.
+### 4. High-Performance Caching (`CacheService`)
+- In-memory semantic and normalized exact-match cache.
+- Instant, zero-cost responses ($0.00 USD, $<10$ ms latency) for repetitive applicant questions.
 
-5. **Multi-Channel Integration & Real-time Streaming**:
-   - `POST /api/chat/stream`: Real-time Server-Sent Events (SSE) streaming endpoint with progressive token delivery and interactive Quick Reply Chips.
-   - `POST /api/chat`: REST API endpoint for web and mobile frontends.
-   - `POST /api/webhook`: Webhook endpoint compatible with Telegram bots and n8n workflow triggers.
-   - `n8n_workflow.json`: Ready-to-import n8n workflow connecting Telegram & Webhook to the RAG backend with automated human escalation routing.
-   - Glassmorphism Web UI at `/` featuring live chat, quick reply chips, source chunk inspector, and telemetry dashboard.
+### 5. Modern Glassmorphic Web Interface & Parallax Background
+- **Ultracompact Floating Pill Navbar (`rounded-full`, `w-auto max-w-fit`, `z-30`):**
+  - Brand identity: Circular Miku avatar frame (`rounded-full`, `w-6 h-6`), title `Miku AI`, and green `v1.0` badge.
+  - Status indicator: Live `Online` pill with pulsating emerald light.
+  - Action button: Dark pill `Show Telemetry` toggle that dynamically illuminates when the inspector is active.
+- **Dynamic Glassmorphic Transition (`.translucent-glass`):**
+  - **Default State:** Translucent glass (`rgba(9, 9, 11, 0.20)`, `blur(4px)`, opacity 0.85) allowing the multi-layered 3D Parallax mountain and fog scene to shine through cleanly.
+  - **Active State:** Seamlessly transitions (`0.45s` cubic-bezier) to solid frosted glass (`rgba(9, 9, 11, 0.85)`, `blur(28px)`, opacity 1) upon cursor hover (`:hover`), card focus (`:focus-within`), or while typing (`input` listener).
+  - **Zero Overlap Layout:** Generous top padding (`pt-20`) on the main container ensuring clean vertical spacing without overlapping elements.
+- **Interactive Controls:**
+  - Real-time Server-Sent Events (SSE) streaming with typewriter token delivery.
+  - Quick-reply topic suggestion chips.
+  - Collapsible RAG Context Inspector displaying retrieved ChromaDB chunks and similarity scores.
 
 ---
 
@@ -46,70 +102,84 @@ An intelligent, production-grade AI Admissions Assistant for a Technological Uni
 ```
 .
 ├── app/
-│   ├── api/                 # API endpoints and route definitions
-│   ├── main.py              # FastAPI server entry point, streaming & webhook logic
+│   ├── api/                     # API route handlers
+│   ├── main.py                  # FastAPI application, startup events, SSE & webhooks
 │   ├── prompts/
-│   │   └── system_prompts.py# Grounded system prompt & 7 Few-Shot examples
+│   │   └── system_prompts.py    # Grounded system prompt & 10 Few-Shot examples
 │   ├── rag/
-│   │   ├── engine.py        # RAG pipeline orchestrator (Sync & SSE Stream)
-│   │   ├── ingest.py        # Business document ingestion script
-│   │   ├── text_splitter.py # Recursive text splitter with overlap
-│   │   └── vector_store.py  # ChromaDB vector store manager & embeddings
+│   │   ├── engine.py            # End-to-end RAG orchestrator, query expansion & cleaner
+│   │   ├── ingest.py            # Business document chunking and ChromaDB ingestion
+│   │   ├── text_splitter.py     # Recursive text splitter with overlap
+│   │   └── vector_store.py      # ChromaDB vector store manager & embedding generator
 │   ├── services/
-│   │   ├── cache_service.py # Fast semantic/exact query response cache
-│   │   ├── escalation_service.py # Escalation evaluation & ticket manager
-│   │   └── metrics_service.py    # Usage token cost, quota & telemetry tracking
+│   │   ├── cache_service.py     # In-memory query response cache
+│   │   ├── escalation_service.py# Double-filter escalation evaluator & ticket manager
+│   │   └── metrics_service.py   # Token telemetry, cost calculation & quota tracking
 │   ├── static/
-│   │   └── index.html       # Modern dark-mode web application & dashboard
+│   │   ├── index.html           # Dark-mode glassmorphism web interface
+│   │   ├── miku.gif             # Official avatar animation
+│   │   └── parallax/            # 17 local multi-layered parallax assets (PNG)
 │   └── tests/
-│       └── test_rag.py      # Automated test suite (8 unit & integration tests)
+│       └── test_rag.py          # Unit tests (Cache, Vector store, Chunking, Telemetry)
 ├── data/
-│   ├── chroma_db/           # Persistent ChromaDB vector database files
-│   └── documents/           # University & Academy business documents (TXT)
+│   ├── chroma_db/               # Persistent ChromaDB vector database files
+│   └── documents/               # Verified University & Academy business documents
 │       ├── 01_programs_and_modalities.txt
 │       ├── 02_tuition_fees_and_financial_aid.txt
 │       └── 03_admissions_and_certifications.txt
-├── .env.example             # Environment variables configuration template
-├── n8n_workflow.json        # Exported n8n automation workflow (Telegram + Webhook)
-├── package_project.py       # Submission packaging utility script
-├── requirements.txt         # Project dependencies
-└── README.md                # Project documentation
+├── src/
+│   ├── components/
+│   │   └── ui/
+│   │       └── mini-navbar.tsx  # React/TypeScript Floating Pill Navbar component
+│   └── lib/
+│       └── utils.ts             # Tailwind class merging utility (cn)
+├── tests/
+│   └── test_rag_flow.py         # End-to-end RAG intent & escalation verification tests
+├── .env.example                 # Environment variable template
+├── n8n_workflow.json            # Automation workflow template (Telegram + Webhook)
+├── package_project.py           # Submission zip packaging utility
+├── requirements.txt             # Python production dependencies
+├── render.yaml                  # Render Infrastructure-as-Code Blueprint
+├── runtime.txt                  # Python runtime version for cloud deployment
+└── README.md                    # Project documentation
 ```
 
 ---
 
-## Quick Start & Setup Guide
+## Quick Start & Local Setup
 
-### 1. Environment Setup & Installation
+### 1. Prerequisites
+- Python 3.10, 3.11, or 3.12
+- Git
 
-Clone or extract the repository, create a virtual environment, and install dependencies:
-
+### 2. Installation & Virtual Environment
 ```bash
+# Clone the repository
+git clone https://github.com/Diego-capu/pruebaDesempe-o_AI.git
+cd pruebaDesempe-o_AI
+
 # Create virtual environment
-python -m venv venv
+python3 -m venv venv
 
-# Activate virtual environment (Windows)
-venv\Scripts\activate
-
-# Activate virtual environment (Linux/macOS)
+# Activate virtual environment
+# On Linux/macOS:
 source venv/bin/activate
+# On Windows:
+# venv\Scripts\activate
 
-# Install required dependencies
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment Variables
-
-Copy `.env.example` to `.env` and set your API keys:
-
+### 3. Environment Variables Configuration
+Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
-
+Configure the environment variables in `.env`:
 ```ini
-OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=your_openai_or_gemini_api_key
 MODEL_NAME=gpt-4o-mini
 EMBEDDING_MODEL=text-embedding-3-small
 TEMPERATURE=0.1
@@ -121,217 +191,206 @@ ENABLE_SEMANTIC_CACHE=true
 HOST=0.0.0.0
 PORT=8000
 ```
+> **Note:** The engine includes a built-in offline simulation fallback so the system remains fully functional and 100% testable even without an active external API key.
 
-> **Note**: If `OPENAI_API_KEY` is not provided or remains as default placeholder, the system runs with a high-accuracy local vectorizer and offline generator so all endpoints and features remain 100% testable.
-
-### 3. Ingest University Business Documents
-
-Run the ingestion script to populate ChromaDB vector store:
-
+### 4. Vector Database Ingestion
+Populate ChromaDB with the official documents:
 ```bash
 python -m app.rag.ingest
 ```
+*(FastAPI also performs automatic cold-boot ingestion during startup if ChromaDB is empty).*
 
-*Output:*
-```
-INFO:app.rag.ingest:Found 3 business documents in './data/documents'...
-INFO:app.rag.ingest:Ingestion Complete! Total 18 chunks stored in ChromaDB.
-```
-
-### 4. Run FastAPI Backend Server
-
-Launch the server locally:
-
+### 5. Run the Application
+Launch the server with Uvicorn:
 ```bash
-python app/main.py
-```
-Or using uvicorn:
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+PYTHONPATH=. uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Open your browser and navigate to:
-- **Interactive Web UI & Dashboard**: `http://localhost:8000`
-- **Interactive OpenAPI Documentation**: `http://localhost:8000/docs`
+Navigate to:
+- **Interactive Web UI:** [http://localhost:8000](http://localhost:8000)
+- **Interactive Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc API Explorer:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ---
 
 ## API Documentation & Examples
 
-### 1. Chat Query Endpoint (`POST /api/chat`)
-
+### 1. Synchronous Chat (`POST /api/chat`)
 **Request:**
 ```bash
 curl -X POST "http://localhost:8000/api/chat" \
      -H "Content-Type: application/json" \
      -d '{
-       "query": "How much is undergraduate tuition per semester?",
-       "session_id": "student_123"
+       "query": "What is the tuition for the M.Sc.?",
+       "session_id": "applicant_01"
      }'
 ```
 
 **Response:**
 ```json
 {
-  "answer": "Full-time undergraduate tuition at TechUni is $4,200 USD per semester ($8,400 USD per academic year).",
+  "answer": "Full-time tuition for the Master of Science in Software Architecture (M.Sc. Software Arch) at TechUni is $3,600 USD per semester (12 credits), totaling $14,400 USD across the 4-semester program.",
   "escalated": false,
   "escalation_details": null,
   "sources": ["02_tuition_fees_and_financial_aid.txt"],
   "retrieved_chunks": [
     {
-      "text": "Full-Time Tuition (15-18 credits per semester): $4,200 USD per semester.",
+      "text": "Master of Science Programs (M.Sc. Software Arch): Tuition per semester (12 credits) is $3,600 USD. Total Program Cost across 4 semesters is $14,400 USD.",
       "source": "02_tuition_fees_and_financial_aid.txt",
-      "similarity": 0.8924
+      "similarity": 0.892
     }
+  ],
+  "suggested_chips": [
+    "Are there any scholarships for women in STEM?",
+    "What are the payment plan options?",
+    "What are the application requirements?"
   ],
   "cached": false,
   "token_usage": {
     "prompt_tokens": 420,
-    "completion_tokens": 35,
-    "total_tokens": 455
+    "completion_tokens": 38,
+    "total_tokens": 458
   },
   "estimated_cost_usd": 0.000084,
-  "latency_ms": 312.4
+  "latency_ms": 284.5
 }
 ```
 
-### 2. Real-time Streaming Query Endpoint (`POST /api/chat/stream`)
-
-**Request:**
+### 2. Real-Time Streaming (`POST /api/chat/stream`)
+Supports Server-Sent Events (SSE) with progressive token delivery:
 ```bash
 curl -N -X POST "http://localhost:8000/api/chat/stream" \
      -H "Content-Type: application/json" \
      -d '{
-       "query": "How much is undergraduate tuition per semester?"
+       "query": "What industry certifications are included in the curriculum?"
      }'
 ```
 
-**SSE Event Stream Output:**
-```
-data: {"type": "token", "content": "Full-Time"}
-data: {"type": "token", "content": " Undergraduate Tuition is $4,200 USD per semester."}
-data: {"type": "done", "answer": "Full-Time Undergraduate Tuition is $4,200 USD per semester.", "escalated": false, "suggested_chips": ["Scholarships & Financial Aid", "Monthly Installment Plans", "Registration Deadlines"], ...}
-```
-
-### 3. Webhook Endpoint for Telegram / n8n (`POST /api/webhook`)
-
+### 3. Human Escalation Example (`POST /api/chat`)
 **Request:**
 ```bash
-curl -X POST "http://localhost:8000/api/webhook" \
+curl -X POST "http://localhost:8000/api/chat" \
      -H "Content-Type: application/json" \
      -d '{
-       "message": {
-         "text": "Are there any scholarships for women in STEM?",
-         "chat": { "id": 987654321 }
-       }
+       "query": "Do you offer Civil Engineering?",
+       "session_id": "applicant_02"
      }'
-```
-
-### 4. Telemetry & Metrics Endpoint (`GET /api/metrics`)
-
-**Request:**
-```bash
-curl http://localhost:8000/api/metrics
 ```
 
 **Response:**
 ```json
 {
-  "total_queries_processed": 14,
-  "total_tokens_used": 4790,
-  "prompt_tokens": 4210,
-  "completion_tokens": 580,
+  "answer": "We currently do not offer a Civil Engineering program in our curriculum. I have forwarded your inquiry to an admissions advisor to assist you with available engineering tracks or transfer options.",
+  "escalated": true,
+  "escalation_details": {
+    "stage": "Post-LLM (System Prompt Tag)",
+    "reason": "Legitimate request requiring human advisor follow-up",
+    "ticket_id": "TICK-A8F2B1",
+    "max_similarity_score": 0.28
+  },
+  "sources": [],
+  "retrieved_chunks": [],
+  "suggested_chips": [
+    "Academic Programs Available",
+    "What are the admission requirements?",
+    "How much is tuition per semester?"
+  ]
+}
+```
+
+### 4. Telemetry Metrics (`GET /api/metrics`)
+**Request:**
+```bash
+curl -s http://localhost:8000/api/metrics
+```
+
+**Response:**
+```json
+{
+  "total_queries_processed": 24,
+  "total_tokens_used": 6840,
+  "prompt_tokens": 5820,
+  "completion_tokens": 1020,
   "token_limit_monthly": 1000000,
-  "token_usage_percentage": 0.479,
+  "token_usage_percentage": 0.684,
+  "average_latency_ms": 245.8,
   "escalation_metrics": {
-    "total_escalations": 2,
-    "escalation_rate_pct": 14.29,
-    "pre_llm_escalations_saved_cost": 1,
+    "total_escalations": 3,
+    "escalation_rate_pct": 12.5,
+    "pre_llm_escalations_saved_cost": 2,
     "post_llm_escalations": 1
   },
   "financial_metrics": {
-    "total_estimated_cost_usd": 0.000980,
+    "total_estimated_cost_usd": 0.00142,
     "currency": "USD"
   },
   "cache_metrics": {
-    "hits": 3,
-    "misses": 11,
-    "hit_rate_pct": 21.43
-  }
+    "hits": 6,
+    "misses": 18,
+    "total_requests": 24,
+    "hit_rate_pct": 25.0,
+    "cached_entries_count": 8
+  },
+  "indexed_vector_chunks": 28
 }
 ```
 
 ---
 
-## n8n Automation Workflow Setup
+## Comprehensive Automated Test Matrix
 
-The project includes an exportable n8n workflow file (`n8n_workflow.json`):
+The project features a **17-test automated verification matrix** covering retrieval accuracy, intent handling, escalation controls, and system telemetry:
 
-1. Open your **n8n instance** (Self-hosted or Cloud).
-2. Go to **Workflows** > **Import from File** and select `n8n_workflow.json`.
-3. The workflow automatically connects:
-   - **Telegram Trigger / Webhook Trigger** $\rightarrow$ Captures student message.
-   - **HTTP Request** $\rightarrow$ Dispatches query to `POST http://localhost:8000/api/chat`.
-   - **IF Node (`Is Escalated?`)** $\rightarrow$ Routes normal answers to the user and triggers an automated alert with `Ticket ID` to the Human Admissions team when escalation is needed.
+| # | Test Name | Query / Focus | Expected Behavior | Status |
+| :-: | :--- | :--- | :--- | :-: |
+| 1 | `test_greeting_bypass_pre_llm` | `"Hello!"` | Pre-LLM bypass, 0 vector chunks, zero tickets | ✅ PASS |
+| 2 | `test_general_intent_sign_up` | `"I want to sign up"` | Broad signup orientation, lists degree tracks, no ticket | ✅ PASS |
+| 3 | `test_specific_data_msc_tuition` | `"What is the tuition for the M.Sc.?"` | Accurate pricing ($3,600/sem, $14,400 total), no ticket | ✅ PASS |
+| 4 | `test_legitimate_out_of_scope` | `"Do you offer Civil Engineering?"` | Legitimate escalation, generates ticket `TICK-XXXXXX` | ✅ PASS |
+| 5 | `test_spam_irrelevant_pizza` | `"pizza"` | Polite boundary rejection, no tickets | ✅ PASS |
+| 6 | `test_academic_programs_available` | `"Academic Programs Available"` | In-scope programs breakdown (B.Sc., M.Sc., Bootcamps), no ticket | ✅ PASS |
+| 7 | `test_study_modalities` | `"Study Modalities (Online/Hybrid)"` | In-scope breakdown (On-Campus, Hybrid, 100% Online), no ticket | ✅ PASS |
+| 8 | `test_cisco_and_aws_certifications`| `"Cisco & AWS Certifications"` | In-scope certification pathways & vouchers, no ticket | ✅ PASS |
+| 9 | `test_cryptocurrency_payment` | `"Do you accept cryptocurrency...?"` | Clarifies crypto refusal, lists official payment plans, no ticket | ✅ PASS |
+| 10 | `test_vector_store_ingestion` | Ingestion verification | ChromaDB persists and indexes 28 document chunks | ✅ PASS |
+| 11 | `test_text_splitter_overlap` | Recursive chunking | 500 characters with 100 characters sliding overlap | ✅ PASS |
+| 12 | `test_semantic_cache_hit` | Cache service | Second identical query returns instant cached response | ✅ PASS |
+| 13 | `test_telemetry_cost_recording` | Cost calculation | Verifies exact token extraction and USD tracking | ✅ PASS |
+| 14 | `test_quota_consumption_limit` | Quota calculation | Correctly tracks % usage against monthly limit | ✅ PASS |
+| 15 | `test_multilingual_spanish_support`| Spanish inquiries | Correct Spanish synthesis without false escalations | ✅ PASS |
+| 16 | `test_clean_context_chunks` | Header sanitizer | Strips raw dividers (`===`) and section headers | ✅ PASS |
+| 17 | `test_pydantic_schema_validation` | API payload models | Validates request and response contracts | ✅ PASS |
 
----
-
-## Cloud Deployment on Render
-
-The application is deployed and publicly accessible in production on **Render**:
-
-🔗 **Production Web Application:** [https://miku-ai-admissions-assistant.onrender.com](https://miku-ai-admissions-assistant.onrender.com)  
-📖 **Interactive Swagger Docs:** [https://miku-ai-admissions-assistant.onrender.com/docs](https://miku-ai-admissions-assistant.onrender.com/docs)  
-⚡ **Real-Time Streaming Endpoint:** `POST https://miku-ai-admissions-assistant.onrender.com/api/chat/stream`  
-📊 **Live Telemetry & Metrics:** `GET https://miku-ai-admissions-assistant.onrender.com/api/metrics`
-
-### Deploying Your Own Instance on Render
-
-The repository includes a ready-to-use **Render Blueprint** (`render.yaml`) and runtime definition (`runtime.txt`):
-
-#### Method 1: Zero-Config Render Blueprint (Recommended)
-1. Go to [Render Dashboard](https://dashboard.render.com/) and click **New +** > **Blueprint**.
-2. Connect your GitHub account and select repository: `Diego-capu/pruebaDesempe-o_AI`.
-3. Enter your `OPENAI_API_KEY` (Google AI Studio or OpenAI key).
-4. Click **Apply**. Render will automatically build the environment, launch Uvicorn, and initialize ChromaDB vector storage on startup.
-
-#### Method 2: Manual Web Service Setup
-- **Environment:** Python 3 (`3.11.9`)
-- **Build Command:** `pip install -r requirements.txt`
-- **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- **Environment Variables:**
-  - `OPENAI_API_KEY`: `<YOUR_API_KEY>`
-  - `OPENAI_BASE_URL`: `https://generativelanguage.googleapis.com/v1beta/openai/`
-  - `LLM_MODEL`: `gemini-3.5-flash-lite`
-  - `EMBEDDING_MODEL`: `gemini-embedding-001`
-  - `SIMILARITY_THRESHOLD`: `0.55`
-  - `MAX_RETRIEVED_CHUNKS`: `3`
-  - `TOKEN_LIMIT_MONTHLY`: `1000000`
-
----
-
-## Automated Verification & Testing
-
-Run unit & integration tests using `pytest`:
-
+To execute the complete test suite:
 ```bash
-pytest app/tests/test_rag.py -v
+PYTHONPATH=. pytest -v
 ```
 
 ---
 
-## Packaging Deliverables
+## Cloud Deployment (Render)
 
-To generate the final `.zip` submission archive required for evaluation:
+The application includes native **Render Blueprint** configuration (`render.yaml`) and runtime specifications (`runtime.txt`):
 
+### Deployment Instructions:
+1. Push your changes to GitHub: `https://github.com/Diego-capu/pruebaDesempe-o_AI`.
+2. In the [Render Dashboard](https://dashboard.render.com/), click **New +** > **Blueprint**.
+3. Select your repository. Render automatically reads `render.yaml` and deploys the web service.
+4. Set your `OPENAI_API_KEY` in the Render Environment Variables tab.
+5. Render automatically executes cold-boot ingestion during startup and begins serving the application.
+
+---
+
+## Submission Packaging Utility
+
+To generate the final `.zip` submission package:
 ```bash
 python package_project.py
 ```
-
-This generates `university_admissions_rag_assistant.zip` in the root directory containing all code, business documents, vector embeddings, documentation, and configuration files.
+This produces `university_admissions_rag_assistant.zip` in the root directory containing all source code, business documents, vector database assets, tests, configurations, and documentation.
 
 ---
 
 ## Author
-
-Diego Andres Ospino Barrios
+**Diego Andres Ospino Barrios**  
+TechUni Admissions AI Assistant Project
