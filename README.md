@@ -19,31 +19,31 @@ An intelligent, production-grade AI Admissions Assistant for Technological Unive
 
 ```mermaid
 flowchart TD
-    User([Student / Applicant]) -->|Query| Frontend[Web UI / SSE / Telegram]
-    Frontend -->|POST /api/chat or /api/chat/stream| API[FastAPI Controller]
+    User(["Student / Applicant"]) -->|Query| Frontend["Web UI / SSE / Telegram"]
+    Frontend -->|"POST /api/chat or /api/chat/stream"| API["FastAPI Controller"]
     
-    API --> Cache{Exact / Semantic Cache?}
-    Cache -->|Hit| InstantResponse[Return Cached Response\n0ms / $0.00]
+    API --> Cache{"Exact or Semantic Cache?"}
+    Cache -->|Hit| InstantResponse["Return Cached Response<br/>(0ms / $0.00)"]
     
-    Cache -->|Miss| PreFilter{Greeting Fast-Path?}
-    PreFilter -->|Greeting| DirectGreeting[Cordial Greeting\n0 Context Chunks / No Ticket]
+    Cache -->|Miss| PreFilter{"Greeting Fast-Path?"}
+    PreFilter -->|Greeting| DirectGreeting["Cordial Greeting<br/>(0 Context Chunks / No Ticket)"]
     
-    PreFilter -->|Inquiry| QueryCleaner[Regex Symbol Cleaner\nStrip () / , + &]
-    QueryCleaner --> Expander[Domain Query Expander\n<= 8 Words Expansion]
-    Expander --> Chroma[(ChromaDB Vector Store\n28 Chunks / Cosine Distance)]
+    PreFilter -->|Inquiry| QueryCleaner["Regex Symbol Cleaner<br/>(Sanitizes punctuation)"]
+    QueryCleaner --> Expander["Domain Query Expander<br/>(Expands queries &le; 8 words)"]
+    Expander --> Chroma[("ChromaDB Vector Store<br/>28 Chunks / Cosine Distance")]
     
-    Chroma --> ContextCleaner[Context Chunk Sanitizer\nStrip === Dividers & Raw Headers]
-    ContextCleaner --> PromptBuilder[Grounded Prompt Builder\n10 Few-Shot Examples]
+    Chroma --> ContextCleaner["Context Chunk Sanitizer<br/>(Removes dividers & raw headers)"]
+    ContextCleaner --> PromptBuilder["Grounded Prompt Builder<br/>(10 Few-Shot Examples)"]
     
-    PromptBuilder --> LLM[LLM Engine\nGemini / GPT-4o]
-    LLM --> PostFilter{Post-LLM Evaluator\nTag Detection}
+    PromptBuilder --> LLM["LLM Engine<br/>(Gemini / GPT-4o)"]
+    LLM --> PostFilter{"Post-LLM Evaluator<br/>Tag Detection"}
     
-    PostFilter -->|ESCALATE_TO_HUMAN| TicketGen[Escalation Ticket Generated\nTICK-XXXXXX]
-    PostFilter -->|Grounded Answer| AnswerGen[Synthesized Response\nNo Robotic Headers]
+    PostFilter -->|ESCALATE_TO_HUMAN| TicketGen["Escalation Ticket Generated<br/>(TICK-XXXXXX)"]
+    PostFilter -->|Grounded Answer| AnswerGen["Synthesized Response<br/>(Natural & Fluid)"]
     
-    TicketGen --> Telemetry[Metrics & Telemetry Service\nToken Usage & USD Cost]
+    TicketGen --> Telemetry["Metrics & Telemetry Service<br/>(Token Usage & USD Cost)"]
     AnswerGen --> Telemetry
-    Telemetry --> ResponseStream[Server-Sent Events / JSON Payload]
+    Telemetry --> ResponseStream["Server-Sent Events / JSON Payload"]
     ResponseStream --> Frontend
 ```
 
